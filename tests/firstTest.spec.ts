@@ -24,6 +24,8 @@ test('User facing locators', async ({ page }) => {
 
 // test git
 // add branch test02
+// add change to test02
+
 });
 
 
