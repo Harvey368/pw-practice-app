@@ -12,7 +12,8 @@ test('Login',async ({ page }) => {
   await page.locator('#okta-signin-password').fill('Traderev1!')
   await page.locator('#okta-signin-submit').click()
   await page.waitForURL('https://app.stg.openlane.ca/')
-  await page.waitForLoadState('load'); 
+  await page.waitForResponse('https://openauction.uat.nw.adesa.ca/api/search/vehicles')
+  //await page.waitForLoadState('load'); 
 
   await page.getByTestId('header-heading').click()
   await expect(page.getByTestId('header-heading')).toBeVisible();
