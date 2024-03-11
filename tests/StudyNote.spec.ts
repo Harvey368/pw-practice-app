@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { SSL_OP_NO_TLSv1_1 } from 'constants';
 
 test.beforeEach( async ({ page }) => {
   await page.goto('http://localhost:4200/')
@@ -236,6 +237,7 @@ test('test 01', async ({ page }) => {
     await gridEmailInput.fill('nwqa@adesa.com')
     await gridEmailInput.clear()
     await gridEmailInput.pressSequentially('nwqa@adesa.com',{delay:1000}) //模拟键盘输入，并可设置延迟每1秒输入一个字符
+    await gridEmailInput.type('nwqa@adesa.com',{delay:1000})              //另一种延迟方法
 
   // Input assertion
     await expect(gridEmailInput).toHaveValue('nwqa@adesa.com') 
@@ -285,19 +287,181 @@ test('test 01', async ({ page }) => {
     await page.locator('nb-tooltip').textContent()         //取得tooltip里弹出文字
 
 
+  // Dialog Boxes
+
+  // Web tables
+
 
 //============================== < Secion 5 - End > ==============================
 
 
 
 //============================== < Secion 6 - Page Object Model > ==============================
+/*
+ 1. Page object model is a design pattern used in the test automation to organize source code, improve maintainability and reusability of the code.
+ 2. 把对象页面的元素定位工作都集中到一个页面对象中并封装独立出来，其中定义constructor来构建页面，定位元素，同时定义method，
+    以后在测试代码中只留下要做的操作，即(调用method)。 如果页面上的元素有修改，则只需要到那个页面对象的文件中修改就好，无需改动测试代码
 
 
 
 
-
+*/
 //============================== < Secion 6 - End > ==============================
 
+
+
+//============================== < Secion 7 - Page Object Model > ==============================
+/*
+*/
+//============================== < Secion 7 - End > ================================
+
+
+
+//============================== < Secion 8 - Advanced > ==============================
+/*
+  1. npm run
+      在package.json 文件里定义run的具体参数，然后用npm run 来调用
+      在“script"下面可以加： ”runPageOjbect“: "npx playwright test usePageObjects.spec.ts --project=chromium"
+      然后调用为： npm run runPageObject 
+      = npx playwright test usePageObjects.spec.ts --project=chromium
+
+  2. Test Data generator
+      install faker library
+
+  3. Test retry
+    * 在"playwright.config.ts" 文件中可以找到 retries: process.env.CI ? 2:0  代表在CI环境中try 2次，local不retry
+    * 也可以在code 里面直接改动:  test.describe.configure({retries:2})
+    * 如果需要在retry时加以特殊控制，则需要在参数中传入'testInfo', 然后在代码中加入如下代码
+        test('Locator syntax rules', async ({ page }, testInfo) => {
+          if(testInfo.retry){
+            // do something
+          }
+        });
+
+  4. Run in parallel
+
+  5. Screenshots and Videos
+    * 自动创建文件夹并将screenshot 保存其下
+        await page.screenshot({path:'screenshots/xxx.png')                    // whole page
+        await page.locator('nb-card').screenshot({path:'screenshots/xxx.png') // only take screenshot on located area 
+    * 也可以将其存入变量待后期处理
+        const bufferImage = await page.screenshot()
+    
+    * record a video
+      需要在playwright.config.ts 里面‘use’ 下面打开 video: 'on' /其他选项:‘on-first-retry','retain-on-failre', etc..
+      如需高分辨率可以  video:{ mode:'on',
+                             size:{width:1920, height:1080} }
+        注意 在plugin里触发测试不会record video，需要用CLI 来
+        然后到 test-results 文件夹下可以在对应的测试下看到 webm 文件
+        另外运行 npx playwright show-report 也可在网页版report下找到视频
+
+  6. Environment Variables
+    * 加 baseURL: 'http://localhost:4200/' 到 playwright.config文件中‘use’ 下面
+        随后在code中就不需要在打前面的URL了，可以调用如下： 
+          await page.goto('/form')    // = 'http://localhost:4200/form' 
+
+    * 注意上面的‘use’ 下面的各种设定是可以改到各个project 下面单独设定的
+
+    * 如果需要在一个测试中使用不同的base URL，例如 stage 与 test 使用不同的URL，请具体看视频
+
+  7. Configuration file
+    * Example:
+        expect: { timeout: 2000 },
+        retries: 1,
+        reporter: 'html',
+        use: {
+          globalURL: 'https://www.globalsqa.com/demo-site/draganddrop/', 
+          baseURL: process.env.DEV === '1' ? 'http://localhost:4201/'
+                  : process.env.STAGING == '1' ? 'http://localhost:4202/'
+                  : 'http://localhost:4200/',
+          trace: 'on-first-retry',
+          actionTimeout: 20000,
+          navigationTimeout: 25000,
+          video: {mode: 'off',
+                  size: {width: 1920, height: 1080}
+                }
+        },
+
+     *  https://playwright.dev/docs/test-configuration  
+        https://playwright.dev/docs/test-use-options
+
+
+
+
+
+
+
+
+*/
+//============================== < Secion 8 - End > ================================
+
+//== Project setup ==
+/* Configure projects for major browsers */ 
+import { defineConfig, devices } from '@playwright/test';
+projects:[
+  { // A
+    name: 'setup', 
+    testMatch: 'auth.setup.ts'
+  },
+  { // B
+    name: 'articleSetup',
+    testMatch: 'newArticle.setup.ts',
+    dependencies: ['setup'],          // “articleSetup”有dependancy 在“setup” 上， 即 B -> A 
+    teardown:'articleCleanUp'         // 运行结束后调用 article cleanup 来清理
+  },
+  { // C
+    name: 'likeCounter',                    // project名字。 在npx命令中 -- project=likeCounter
+    testMatch: 'likesCounter.spec.ts',      // 会运行匹配的test，在此处为唯一的文件名
+    use: { ...devices['Desktop Chrome'], storageState: '.auth/user.json'},   // 指定use的细节
+    dependencies: ['articleSetup']         // 指定dependancy，即需先调用的项目，即 C -> B -> A 
+  },
+  { // D
+    name: 'regression',                   // 小心，没有testMatch，所以默认会运行目录下所有spec.ts
+    testIgnore: 'likesCounter.spec.ts',   // 排除 指定的test
+    use: {...devices['Desktop Chrome'], storageState: '.auth/user.json' }, 
+    dependencies: ['setup'],           // D -> A
+  },
+  { // E
+    name:'articlCleanUp',
+    testMatch:'articleCleanUp.setup.ts'     // 
+  }
+]
+
+
+
+
+// 8-9 project setup and teardown (teardown 摧毁，即最后清理还原)
+/* You can create a global setup and teardown using a project level.
+
+1. create a separate project that will match a certain setup test that will create a setup for you and match an additional project that will make a teardown. 
+
+In our example, it's Article Cleanup project, and then you just create a dependency inside of your test on the project that you want to run to depend on the project that controls your setup and your teardown.
+*/
+
+
+// 8-10 global setup and teardown   这里的setup其实是“项目初始化”，teardown是“项目结束后清理”
+
+
+
+
+// 8-11 Test tag       在测试代码中设置tag，然后调用时用tag 名字来调用
+    test('test 01 @ABC', async ({ page }) => { XXX }    // 设定测试名称时加 @ABC 
+    调用时： 
+    npx playwright test --grep @ABC    // --grep @ABC 即定位该测试  ‘grep’是Unix中字符串查找工具
+                                       // 可以使用同一个tag 定位多个 test， 运行时会将同样tag 的测试同时运行
+
+
+
+
+
+
+
+   /**     输入 “/**” 系统会自动建立一个参数说明块
+     *    -->输入函数代码说明 
+     * @param name       - XXXXXXXX     在VS中用鼠标悬浮在调用代码时会浮现出此处的说明，以帮助使用
+     * @param email      - XXXXXXXX
+     * @param rememberMe - XXXXXXXX
+     */
 
 
 });
