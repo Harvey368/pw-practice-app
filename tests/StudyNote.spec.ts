@@ -292,6 +292,8 @@ test('test 01', async ({ page }) => {
   // Web tables
 
 
+  // page.locator().all()  // locator 后取回的是DOM 对象，用all可以转成Array，然后就可以用 loop 等功能
+
 //============================== < Secion 5 - End > ==============================
 
 
