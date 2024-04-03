@@ -17,13 +17,28 @@ test('Locator syntax rules', async ({ page }) => {
 
 
 
+
+
+//================================= < Section 3  > ===================================//
+  
+// 21. Tests Structure
+// page.goto + waitUntil
+test('test 01', async ({ page }) => {
+    await page.goto('https://example.com', { waitUntil: 'domcontentloaded' });  
+    // 在调用 page.goto() 后，页面会导航到指定的 URL，然后脚本会等待直到 'DOMContentLoaded' 事件被触发，然后再继续执行后续的代码。=>  waitUntil?: "load"|"domcontentloaded"|"networkidle"|"commit"
+    // load 事件在整个页面和所有其资源（例如图片、样式表、脚本等）都加载完成后触发。
+    // DOMContentLoaded 事件在 HTML 文档加载完成并且解析完成后触发，而不必等待样式表、图像和子框架的加载完成。
+    // ** playwright 的function 有些return 的是Promise， 那么前面就必须加 Await。 例如这个page.goto() 
+  })
+
+// 22. Hooks and Flow Control
 //=============================== structure example ==============================================
 
-test.beforeAll( async ({ page }) => {
+test.beforeAll( async ({ page }) => {   //在所有test前先运行一次
   await page.goto('https://playwright.dev/');
 });
 
-test.beforeEach( async ({ page }) => {
+test.beforeEach( async ({ page }) => {    //在所有的test前每次都运行一次
   await page.goto('https://playwright.dev/')
 });
 
@@ -44,11 +59,13 @@ test.describe('suite1',()=> {
       // Expects page to have a heading with the name of Installation.
       await expect(page.getByRole('heading', { name: 'Installation' })).toBeVisible();
     });
-})
+})       // 注意：在suite里面也可以嵌套 beforeEach
 
 // test.afterAll()
 // test.afterEach()
-// test.fail()
+// test.fail()      
+// test.skip()
+// test.only()
 //================================================
 
 //=======================  Note ==================
