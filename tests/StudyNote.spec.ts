@@ -29,6 +29,11 @@ test('test 01', async ({ page }) => {
     // load 事件在整个页面和所有其资源（例如图片、样式表、脚本等）都加载完成后触发。
     // DOMContentLoaded 事件在 HTML 文档加载完成并且解析完成后触发，而不必等待样式表、图像和子框架的加载完成。
     // ** playwright 的function 有些return 的是Promise， 那么前面就必须加 Await。 例如这个page.goto() 
+
+    await page.waitForURL('https://app.stg.openlane.ca/')
+    await page.waitForLoadState('load'); 
+    //await page.waitForTimeout(10000)
+    //await page.reload()
   })
 
 // 22. Hooks and Flow Control
@@ -66,55 +71,58 @@ test.describe('suite1',()=> {
 // test.fail()      
 // test.skip()
 // test.only()
-//================================================
+//========================
 
-//=======================  Note ==================
+//============================ < Section 3 - End > ============================// 
+
+
+//============================ < Section 4 - Interaction with Web elements > ============================// 
+
+/*    23. DOM Terminology
+1. HTML dom consists of HTML tags, HTML attributes and attribute values.
+2. Class and ID are also HTML attribute names.
+  Class attribute can have a several values and each value is separated by space.
+3. HTML tags usually come in pairs of opening and closing tag. Closing tag has the same name and the forward slash. <> </>
+4. Value in between the angle braces is a plain text or HTML text.
+复习随附 DOM 结构说明
+Tag -> Attribute -> Value      一个Attribute 可能没有value，也可以有多个value， 例如 class
+Class 与 ID 也是attribute的一种，
+*/
+
+//===== 24. Locator Syntax Rules ========= 
 test('test 01', async ({ page }) => {
   await page.goto('http://localhost:4200/');
 
-  await page.waitForURL('https://app.stg.openlane.ca/')
-  await page.waitForLoadState('load'); 
-  //await page.waitForTimeout(10000)
-  //await page.reload()
-
-
-
-
-
-//============================== < Section 4 - Interaction with Web elements > ==============================// 
-
-  //=============== Locator ================ 
-
-  //by Tag name
+  //by Tag name           Tag 是较为高层的元素
   page.locator('input')
   page.locator('nb-card nb-radio')   //parent_tag + child_tag
 
-  //by ID
+  //by ID                   ID 是特殊attribute  
   page.locator('#inputEmail1')
 
-  //by Class Value
+  //by Class Value           Class 是特殊attribute  
   page.locator('.shape-rectangle')
 
-  //by attribute
+  //by attribute（+value）      通用的 attribute 定位  
   page.locator('[placeholder="Email"]')
 
-  //by Class Value (full)
+  //by Class Value (full)     其实就是attribute 定位
   page.locator('[class="input-full-width size-medium status-basic shape-rectangle"]')
 
-  //combine different selectors
+  //combine different selectors    有 并联 与 级联 两种
   page.locator('input[placeholder="email"]')              // TagName + attribute  //PS. No space between them
-  page.locator('[placeholder="email"].shape-rectangle')   // Attribute + class
+  page.locator('[placeholder="email"].shape-rectangle')   // Attribute + class   并联模式
   page.locator('input[placeholder="email"][nbinput]')     // TagName + attribute01 + attribute02
   page.locator('nb-card nb-radio :text-is("Option 1")')   // Parent_tag + child_tag + Text exact match
-  page.locator('nb-card').locator('nb-radio').locator(':text-is("Using the Grid")')   // locator级联 更易读
+  page.locator('nb-card').locator('nb-radio').locator(':text-is("Using the Grid")')   // locator级联模式 更易读
 
   //by text match (partial match)
-  page.locator(':text("Using")')
+  page.locator(':text("Using")')    //“Using” 就是UI所显示的Text，:text()是语法
   //by text match (exact match)
   page.locator(':text-is("Using the Grid")')
 
   //by CSS or XPath   (NO recommended)
-  page.locator('//input[@id="exampleInputEmail1"]')       //auto-detect XPath: Tag='input' + id="exampleInputEmail1"
+  page.locator('//input[@id="exampleInputEmail1"]')    //PW会自动判断 XPath: Tag='input' + id="exampleInputEmail1"
   page.locator('xpath=//input[@id="exampleInputEmail1"]')   //normal by_xpath syntax
   page.locator('css=button')                                //normal by_css syntax
 
@@ -123,42 +131,67 @@ test('test 01', async ({ page }) => {
 
   //====================================================
 
+  // === 25. user facing locator  ===== 最主要目的是从用户角度来测试 ====== 
+  // 例如，UI button 上的text消失，对于用户就是无法操作，可是如果使用ID等，测试仍然可以通过，所以需要从用户角度来测试
 
-  // =========== user facing locator  ===== 最主要目的是从用户角度来测试 ======== 
     page.getByRole('textbox', {name:"Email"}).first().click()
     page.getByRole('button', {name:"Sign in"}).first().click()
 
-    page.getByLabel('Email').first().click()
+    page.getByLabel('Email').first().click()      // 元素有一个 tag <label>
 
-    page.getByPlaceholder('Jane Doe').first().click()
+    page.getByPlaceholder('Jane Doe').first().click()    //元素有一个 attribute placeholder=“Email”
 
     await page.getByText('Using').click()                    // contain 
     await page.getByText('Using the Grid', { exact: true })  // exact match
     await page.getByText(/welcome, [A-Za-z]+$/i)             // Regex match
 
-    await page.getByTestId('SignIn').click()                 // testid must embeded 
+    await page.getByAltText('playwright logo').click();    // locate by alt text
 
-    await page.getByTitle('Email').click()
+    await page.getByTitle('Email').click()                //元素有一个 attribute title="Dashboard"
 
+    await page.getByTestId('SignIn').click()              // testid must embeded 
+
+    //getByRole 是从 ARIA role 发展而来，共 67 roles. some popular example of getByRole(): 
+    await page.getByRole('button', { name: 'Submit' }).click();
+    await page.getByRole('checkbox', { name: 'Remember me' }).check();
+    await page.getByRole('link', { name: 'Home' }).click();
+    await page.getByRole('textbox', { name: 'Search' }).fill('Playwright');
+    await page.getByRole('combobox', { name: 'Country' }).selectOption('USA');
+    await page.getByRole('radio', { name: 'Gender', value: 'Male' }).check();
+    await page.getByRole('heading', { name: 'Welcome' });
+    await page.getByRole('slider', { name: 'Volume' }).click();
+    await page.getByRole('menu', { name: 'Options' }).click();
+    await page.getByRole('menuitem', { name: 'Settings' }).click();
+    await page.getByRole('tab', { name: 'Reviews' }).click();
+    await page.getByRole('list', { name: 'To-Do' });
+    await page.getByRole('listitem', { name: 'Task 1' }).click();
+    await page.getByRole('grid', { name: 'Data Grid' });
+    await page.getByRole('row', { name: 'Row 1' });
+    await page.getByRole('cell', { name: 'A1' }).click();
+    await page.getByRole('banner');
+    await page.getByRole('contentinfo');
   // ===========================================
 
-  // ==== combined locator ===
-  
-  // locate child elements
+  // === 26. locate child elements   //  ==== combined locator ===  
   page.locator('nb-card').getByRole('button',{name:"Sign in"}).first()
   page.locator('nb-card').nth(2).getByTestId('SignIn')  //nth是 第n个元素,其返回值仍是一个DOM块,可以继续往下定位
-  page.locator('nb-card nb-radio :text-is("Option 2")')   // 级联定位/ 父tag + 子tag + Text exact match / 等同下一条
+  page.locator('nb-card nb-radio :text-is("Option 2")')  //级联定位 有空格/ 父tag + 子tag + 精确文字匹配 / 等同下一条
   page.locator('nb-card').locator('nb-radio').locator(':text-is("Option 2")') //更易读，父tag ->子tag ->精确文字匹配
-  page.locator('nb-card').getByRole('button',{name:"Sign in"}).first()
-  
-  // locate parent elements == 通过（子元素）辅助定位来找（父元素）
-  page.locator('nb-card',{hasText:"Using"}).getByRole('textbox',{name:"Email"}) //locator函数可以传入object参数 + hasTaxt模糊匹配
-  page.locator('nb-card',{has: page.locator('#inputEmail1')}).getByRole('textbox',{name:"Email"}) //用has 传入一个用ID匹配的块
-    // === filter 更易读 === 更易理解 其通过（子元素）辅助定位来找（父元素）
-  page.locator('nb-card').filter({hasText:"Using"}).getByRole('textbox',{name:"Email"})  // 以上2句的变形，更易读
-  page.locator('nb-card').filter({has: page.locator('#inputEmail1')}).getByRole('textbox',{name:"Email"}) 
+  page.locator('nb-card').getByRole('button',{name:"Sign in"}).first()  //也可以组合user facing locator
+  page.locator('nb-card').nth(3).getByRole('button')   //注意，第一个是 0
+
+
+  // === 27. locate parent elements == 通过（子元素）辅助定位来找（父元素）+  或者可通过它找到 sibling 的元素
+  page.locator('nb-card',{hasText:"Using"})  //locator函数可以传入object参数 + hasTaxt模糊匹配 + 子元素中有 text “Using”
+  page.locator('nb-card',{hasText:"Using"}).getByRole('textbox',{name:"Email"})  //继续组合其他定位方式 找sibling 
+      //下面展示用 has: 传入一个用ID匹配的块，即可以用一块的DOM 来辅助定位
+  page.locator('nb-card',{has: page.locator('#inputEmail1')}). getByRole('textbox',{name:"Email"}) 
+      // 下面进阶用 filter 更易读, 更易理解 其通过（子元素）辅助定位来找（父元素）
+  page.locator('nb-card').filter({hasText:"Using"}). getByRole('textbox',{name:"Email"})  // 以上2句的变形，更易读
+  page.locator('nb-card').filter({has: page.locator('#inputEmail1')}). getByRole('textbox',{name:"Email"}) 
+      // Filter 可以帮助用户在页面有多个相似元素时定位到正确的元素
   page.locator('nb-card').filter({has: page.locator('nb-checkbox')}).filter({hasText:"Sign"})
-      .getByRole('textbox',{name:"Email"})   //Filter可以并联使用，第一个filter运行后是返回一个‘nb-card’的列表，所以可以继续filter
+       //Filter可以并联使用，第一个filter运行后是返回一个‘nb-card’的列表，可以继续filter
   page.locator(':text-is("Using the Grid")').locator('..')  // locator('..') 代表找当前元素的上一级元素
 
   //In order to find a web element using a locator method, you can use a text filter or a locator filter, and then chain from this parent element all the child elements that you want to select. 
@@ -166,15 +199,16 @@ test('test 01', async ({ page }) => {
   //==========================================
 
 
-  // ====== Extract value - Single value ======
+  // ==== 29. Extract value  ======
+  // == Extract Single value 
   const buttonText= await page.locator('button').textContent()
   expect (buttonText).toEqual('Sign in')
-  // ===== Extract all values =====
+  // == Extract all values 
   const allRadioButtons = await page.locator('nb-radio').allTextContents()   // 存入一个 Array
   expect(allRadioButtons).toContain("Option 2")
-  // ===== get input value =====
+  // == get input value 
   const emailValue = page.getByRole('textbox',{name:"Email"}).inputValue()
-  // ===== get element attributes =====
+  // == get element attributes 
   const placeholderList = await page.getByRole('textbox',{name:"Email"}).getAttribute('placeholder') //获得被定位元素的p属性
 
 
