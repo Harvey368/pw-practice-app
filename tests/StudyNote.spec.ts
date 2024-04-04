@@ -17,8 +17,6 @@ test('Locator syntax rules', async ({ page }) => {
 
 
 
-
-
 //================================= < Section 3  > ===================================//
   
 // 21. Tests Structure
@@ -184,7 +182,7 @@ test('test 01', async ({ page }) => {
   // === 27. locate parent elements == 通过（子元素）辅助定位来找（父元素）+  或者可通过它找到 sibling 的元素
   page.locator('nb-card',{hasText:"Using"})  //locator函数可以传入object参数 + hasTaxt模糊匹配 + 子元素中有 text “Using”
   page.locator('nb-card',{hasText:"Using"}).getByRole('textbox',{name:"Email"})  //继续组合其他定位方式 找sibling 
-      //下面展示用 has: 传入一个用ID匹配的块，即可以用一块的DOM 来辅助定位
+      //下面展示用 has: 传入一个用匹配的块，即可以用一块的DOM 来辅助定位
   page.locator('nb-card',{has: page.locator('#inputEmail1')}). getByRole('textbox',{name:"Email"}) 
       // 下面进阶用 filter 更易读, 更易理解 其通过（子元素）辅助定位来找（父元素）
   page.locator('nb-card').filter({hasText:"Using"}). getByRole('textbox',{name:"Email"})  // 以上2句的变形，更易读
@@ -198,39 +196,70 @@ test('test 01', async ({ page }) => {
   //Also, you can alternatively use a filter method that will do exactly the same thing, what is the benefit of using a filter method that you can chain multiple filters one by one, narrowing down your output to the unique element until you get the desired result.
   //==========================================
 
+  // === 28. Reusing Locators
+    const basicForm= page.locator('nb-card').filter({hasText:"Basic form"});
+    await basicForm.fill('test@gmail.com');
+    await basicForm.getByRole('button').click();
 
-  // ==== 29. Extract value  ======
+
+  // ==== 29. Extract value  ======     从 DOM 里面提取所需的值
   // == Extract Single value 
-  const buttonText= await page.locator('button').textContent()
+  const buttonText= await page.locator('button').textContent()  //注意它们返回都是promise，都要加 await
   expect (buttonText).toEqual('Sign in')
+
   // == Extract all values 
-  const allRadioButtons = await page.locator('nb-radio').allTextContents()   // 存入一个 Array
+  const allRadioButtons = await page.locator('nb-radio').allTextContents()  // 存入一个 Array
   expect(allRadioButtons).toContain("Option 2")
-  // == get input value 
-  const emailValue = page.getByRole('textbox',{name:"Email"}).inputValue()
+
+  // == get input value ：
+  // 例如在email栏输入emai后tab跳到下一个，这时检查页面代码会发现找不到输入的text，因为它这时被存为一个value，而非页面的一个text
+  await basicForm.getByRole('textbox',{name:"Email"}).fill('test@test.com')
+  const emailValue = page.getByRole('textbox',{name:"Email"}).inputValue()   //取input里面的value
+  
+  // .innerText(): Obtains the innerText of an element, which represents the rendered text content.
+  // .innerHtml(): Returns the innerHTML of an element, which is the HTML content inside the element.
+
   // == get element attributes 
-  const placeholderList = await page.getByRole('textbox',{name:"Email"}).getAttribute('placeholder') //获得被定位元素的p属性
+  const placeholderValue = await page.getByRole('textbox',{name:"Email"}).getAttribute('placeholder') //获得被定位元素的p属性
+  expect(placeholderValue).toEqual('Email')
+  // 注意它的返回有可能有多个，变成一个list
 
 
-  // ===== General assertions =====
-  const X = page.locator('inputbox').inputValue()
-  expect(X).toEqual(5)
+  // === 30. Assertions ===
+  // ===== General assertions  ( 用鼠标hover 就会看到 “GenericAssertions”， 它执行快，无需 await
+  const value = page.locator('inputbox').inputValue() //这时value的值不是locator()返回的DOM,而是后面的inputValue()返回的“值”
+  expect(value).toEqual(5)
+  expect(value).toContain('Email')    
 
-  //===== Locator assertions =====
+  //= Locator assertions -> 用鼠标hover 会看到 “LocatorAssertions”，是直接对 Locator()返回的 DOM 对象的操作，需加 await
+  await expect(page.getByPlaceholder('Click to add notes')).toHaveValue('Add Note');
   await expect(page.locator('inputbox')).toHaveText('Submit')  //更智能，会retry，多了一些对元素的操作
   await expect(page.locator('nb-layout-header')).toHaveCSS('background-color','rgb(50,50,90)') //验证背景颜色是否是指定值
+  await expect(page.locator('inputbox')).toBeChecked()  
+  await expect(page.locator('inputbox')).toBeVisible() 
+  await expect(page.locator('inputbox')).toBeHidden() 
+  await expect(page.locator('inputbox')).toBeEmpty() 
 
-  // ===== Soft Assertion / 即使失败也能继续执行下去 ======
+    // 其他常用 generic assertion 
+    expect(value).toHaveProperty('xxx')
+    expect(value).toBe(Object)             // compare to an object.
+    expect(value).toBeTruthy()        // - Ensures that a value is true in a boolean context.
+    expect(value).toBeFalsy()        // Checks if a value is false in a boolean context.
+    expect(value).toBeGreaterThan(100)  // Asserts that a number is greater than a certain value.
+    expect(value).toBeLessThan(100)     //Verifies that a number is less than a certain value.
+    expect(value).toBeNull()         // Checks if a value is null.
+    expect(value).toBeDefined()      // Ensures that a variable is not undefined.
+    expect(value).toMatch(/regex/)    // Asserts that a string matches a regular expression pattern.
+
+    // SnapshotAssertions
+    expect(value).toMatchSnapshot()   // match snapshot
+
+  // === Soft Assertion / 即使失败也能继续执行下去 
   await expect.soft(page.locator('Submit_button')).toHaveText('Submit')  //加入‘soft’关键词,失败时程序会继续往下执行
   await page.locator('Submit_button').click()
 
 
-    // ===== waiting =====   
-  await page.waitForLoadState("load")                             // load / documentloaded / networkidle
-  await page.locator('successButton').waitFor({ state:"attached"}) // attached / detached / visible / hidden
-  await page.locator('#submit-button').waitFor({ state: 'visible' });  // Wait for the button to become visible
-  await page.locator('#submit-button').waitFor({ state: 'visible', timeout: 5000 }); //Wait for visible + timeout
-  /*
+  /* === 31 Auto-Waiting ===  Playwright 借用了JS的 aync-await编程 来等待页面元素 be available
     1. Playwright performs a range of actionability checks on the elements before making actions to ensure these actions behave as expected. It auto-waits for all the relevant checks to pass and only then performs the requested action. If the required checks do not pass within the given timeout, action fails with the TimeoutError.
       For example, for locator.click(), Playwright will ensure that: locator resolves to an exactly one element is Visible
     2. Playwright has automatic waiting mechanism for the certain conditions to be satisfied, such as attached, visible, stable, receive events, enabled and editable. 
@@ -265,8 +294,13 @@ test('test 01', async ({ page }) => {
       // wait for a particular page (when you navigate to a special page)
     await page.waitForURL('http://abc.com') 
 
+    await page.waitForLoadState("load")                             // load / documentloaded / networkidle
+    await page.locator('successButton').waitFor({ state:"attached"}) // attached / detached / visible / hidden
+    await page.locator('#submit-button').waitFor({ state: 'visible' });  // Wait for the button to become visible
+    await page.locator('#submit-button').waitFor({ state: 'visible', timeout: 5000 }); //Wait for visible + timeout
 
-  /*  --- Time out --- （有层级关系，且下级timeout不能超过上级）
+
+  /*  -- 32. Time out --- （有层级关系，且下级timeout不能超过上级）
     1. Global timeout is the time limit of the whole test run.    (default: No timeout)
       2. Test timeout is the time limit for a single test execution.  (default: 30秒)
         3-1. Action timeout      (Ex: click(),fill(),textContent(),etc.. --> no default)
