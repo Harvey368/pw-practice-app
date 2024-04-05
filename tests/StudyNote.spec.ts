@@ -12,14 +12,91 @@ test('Locator syntax rules', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Installation' })).toBeVisible();
 });
 
+/* ************** Table of Content **************
 
+Section 1: Preparation
 
+Section 2: JavaScript fundamentals
 
+Section 3: Playwright Hands-On Overview
+    17. Playwright Installation        (6min)
+    18. Test Execution with CLI        (7min)
+    19. Test Execution with UI         (7min)
+    20. Trace View and Debug           (7min)
+    21. Tests Structure                (10min)
+    22. Hooks and Flow Control         (7min)
+
+Section 4: Interaction with Web Elements 
+    23. DOM Terminology                (6min)
+    24. Locator Syntax Rules           (14min)
+    25. User-Facing Locators           (12min)
+    26. Child Elements                 (9min)
+    27. Parent Elements                (13min)
+    28. Reusing Locators               (6min)
+    29. Extracting Values              (10min)
+    30. Assertions                     (10min)
+    31. Auto-Waiting                   (18min)
+    32. Timeouts                       (12min)
+
+Section 5: UI Components
+    33. Input Fields                   (9min)
+    34. Radio Buttons                  (8min)
+    35. Checkboxes                     (9min)
+    36. Lists and Dropdowns            (16min)
+    37. Tooltips                       (7min)
+    38. Dialog Boxes                   (7min)
+    39. Web Tables (Part 1)            (17min)
+    40. Web Tables (Part 2)            (11min)
+    41. Date Picker (Part 1)           (8min)
+    42. Date Picker (Part 2)           (18min)
+    43. Sliders                        (16min)
+    44. Drag & Drop with iFrames       (10min)
+
+Section 6: Page Object Model
+    45. What Is Page Objects           (7min)
+    46. First Page Object              (9min)
+    47. Navigation Page Object         (11min)
+    48. Locators in Page Objects       (8min)
+    49. Parametrized Methods           (14min)
+    50. Date Picker Page Object        (13min)
+    51. Page Objects Manager           (10min)
+    52. Page Objects Helper Base       (7min)
+
+Section 7: Working with APIs
+    53. What is API                    (10min)
+    54. Setup New Project              (9min)
+    55. Mocking API                    (8min)
+    56. Modify API Response            (9min)
+    57. Perform API Request            (23min)
+    58. Intercept Browser API Response (16min)
+    59. Sharing Authentication State   (9min)
+    60. API Authentication             (9min)
+
+Section 8: Advanced
+    61. NPM Scripts and CLI Commands   (6min)
+    62. Test Data Generator            (9min)
+    63. Test Retries                   (9min)
+    64. Parallel Execution             (10min)
+    65. Screenshots and Videos         (9min)
+    66. Environment Variables          (19min)
+    67. Configuration File             (12min)
+    68. Fixtures                       (13min)
+    69. Project Setup and Teardown     (14min)
+    70. Global Setup and Teardown      (13min)
+    71. Test Tags                      (4min)
+    72. Mobile Device Emulator         (8min)
+    73. Reporting                      (7min)
+    74. Visual Testing                 (10min)
+    75. Playwright with Docker Container (20min)
+
+Section 9: Final Words
+
+*/
 
 
 //================================= < Section 3  > ===================================//
   
-// 21. Tests Structure
+// *** 21. Tests Structure
 // page.goto + waitUntil
 test('test 01', async ({ page }) => {
     await page.goto('https://example.com', { waitUntil: 'domcontentloaded' });  
@@ -34,7 +111,7 @@ test('test 01', async ({ page }) => {
     //await page.reload()
   })
 
-// 22. Hooks and Flow Control
+// *** 22. Hooks and Flow Control
 //=============================== structure example ==============================================
 
 test.beforeAll( async ({ page }) => {   //在所有test前先运行一次
@@ -76,7 +153,7 @@ test.describe('suite1',()=> {
 
 //============================ < Section 4 - Interaction with Web elements > ============================// 
 
-/*    23. DOM Terminology
+/* ***   23. DOM Terminology ***
 1. HTML dom consists of HTML tags, HTML attributes and attribute values.
 2. Class and ID are also HTML attribute names.
   Class attribute can have a several values and each value is separated by space.
@@ -87,7 +164,7 @@ Tag -> Attribute -> Value      一个Attribute 可能没有value，也可以有�
 Class 与 ID 也是attribute的一种，
 */
 
-//===== 24. Locator Syntax Rules ========= 
+//*** 24. Locator Syntax Rules ***
 test('test 01', async ({ page }) => {
   await page.goto('http://localhost:4200/');
 
@@ -129,15 +206,15 @@ test('test 01', async ({ page }) => {
 
   //====================================================
 
-  // === 25. user facing locator  ===== 最主要目的是从用户角度来测试 ====== 
+  // *** 25. user facing locator  ===== 最主要目的是从用户角度来测试 ====== 
   // 例如，UI button 上的text消失，对于用户就是无法操作，可是如果使用ID等，测试仍然可以通过，所以需要从用户角度来测试
 
     page.getByRole('textbox', {name:"Email"}).first().click()
     page.getByRole('button', {name:"Sign in"}).first().click()
 
-    page.getByLabel('Email').first().click()      // 元素有一个 tag <label>
+    page.getByLabel('Email').first().click()      // 元素有一个 tag 叫 <label>, label里有一个Text 为"Email"
 
-    page.getByPlaceholder('Jane Doe').first().click()    //元素有一个 attribute placeholder=“Email”
+    page.getByPlaceholder('Email').first().click()    //元素有一个 attribute placeholder=“Email”
 
     await page.getByText('Using').click()                    // contain 
     await page.getByText('Using the Grid', { exact: true })  // exact match
@@ -170,7 +247,7 @@ test('test 01', async ({ page }) => {
     await page.getByRole('contentinfo');
   // ===========================================
 
-  // === 26. locate child elements   //  ==== combined locator ===  
+  // *** 26. locate child elements   //  ==== combined locator ===  
   page.locator('nb-card').getByRole('button',{name:"Sign in"}).first()
   page.locator('nb-card').nth(2).getByTestId('SignIn')  //nth是 第n个元素,其返回值仍是一个DOM块,可以继续往下定位
   page.locator('nb-card nb-radio :text-is("Option 2")')  //级联定位 有空格/ 父tag + 子tag + 精确文字匹配 / 等同下一条
@@ -179,7 +256,7 @@ test('test 01', async ({ page }) => {
   page.locator('nb-card').nth(3).getByRole('button')   //注意，第一个是 0
 
 
-  // === 27. locate parent elements == 通过（子元素）辅助定位来找（父元素）+  或者可通过它找到 sibling 的元素
+  // *** 27. locate parent elements == 通过（子元素）辅助定位来找（父元素）+  或者可通过它找到 sibling 的元素
   page.locator('nb-card',{hasText:"Using"})  //locator函数可以传入object参数 + hasTaxt模糊匹配 + 子元素中有 text “Using”
   page.locator('nb-card',{hasText:"Using"}).getByRole('textbox',{name:"Email"})  //继续组合其他定位方式 找sibling 
       //下面展示用 has: 传入一个用匹配的块，即可以用一块的DOM 来辅助定位
@@ -196,13 +273,13 @@ test('test 01', async ({ page }) => {
   //Also, you can alternatively use a filter method that will do exactly the same thing, what is the benefit of using a filter method that you can chain multiple filters one by one, narrowing down your output to the unique element until you get the desired result.
   //==========================================
 
-  // === 28. Reusing Locators
+  // *** 28. Reusing Locators
     const basicForm= page.locator('nb-card').filter({hasText:"Basic form"});
     await basicForm.fill('test@gmail.com');
     await basicForm.getByRole('button').click();
 
 
-  // ==== 29. Extract value  ======     从 DOM 里面提取所需的值
+  // *** 29. Extract value  ***     从 DOM 里面提取所需的值
   // == Extract Single value 
   const buttonText= await page.locator('button').textContent()  //注意它们返回都是promise，都要加 await
   expect (buttonText).toEqual('Sign in')
@@ -225,8 +302,8 @@ test('test 01', async ({ page }) => {
   // 注意它的返回有可能有多个，变成一个list
 
 
-  // === 30. Assertions ===
-  // ===== General assertions  ( 用鼠标hover 就会看到 “GenericAssertions”， 它执行快，无需 await
+  // *** 30. Assertions ***
+  // == General assertions  ( 用鼠标hover 就会看到 “GenericAssertions”， 它执行快，无需 await
   const value = page.locator('inputbox').inputValue() //这时value的值不是locator()返回的DOM,而是后面的inputValue()返回的“值”
   expect(value).toEqual(5)
   expect(value).toContain('Email')    
@@ -259,7 +336,7 @@ test('test 01', async ({ page }) => {
   await page.locator('Submit_button').click()
 
 
-  /* === 31 Auto-Waiting ===  Playwright 借用了JS的 aync-await编程 来等待页面元素 be available
+  /* *** 31 Auto-Waiting ***  Playwright 借用了JS的 aync-await编程 来等待页面元素 be available
     1. Playwright performs a range of actionability checks on the elements before making actions to ensure these actions behave as expected. It auto-waits for all the relevant checks to pass and only then performs the requested action. If the required checks do not pass within the given timeout, action fails with the TimeoutError.
       For example, for locator.click(), Playwright will ensure that: locator resolves to an exactly one element is Visible
     2. Playwright has automatic waiting mechanism for the certain conditions to be satisfied, such as attached, visible, stable, receive events, enabled and editable. 
@@ -269,19 +346,26 @@ test('test 01', async ({ page }) => {
   */
   // --- Auto waiting ---  Action default timeout 为30秒，在playwright.config.ts中设置,例如click()
                     //--- Expect() default timeout 为5秒
-    await page.locator('Submit_button').click()     // click属于会自动等待的功能，它会自动重试，直至超时(30秒)
-    await page.locator('.bg-success').textContent()  // textContent()也会自动等待并重试， 小心 allTextContents不会等待
+    await page.locator('Submit_button').click()   // click属于会自动等待的功能，它会自动重试，直至超时(30秒)
+                                                  // 若该页面加载快，这个button在30秒内出现则pass， 否则就会直接close -> fail 
+    await page.locator('.bg-success').textContent()    // textContent()也会自动等待30秒并重试， 小心 allTextContents不会等待
+    await page.locator('.bg-success').allTextContents()  // 这个会fail，它会return array 且不会等待
+      //- 对于不会自动等待的功能，需要用变通的方法，比如一定要用allTextContents，可在其前面增加可以自动等待的功能 locator.waitFor()
+      // attached / detached / visible / hidden
+    await page.locator('.bg-success').waitFor({state:"attached"})    //allTextContents不会等待，所以增加一个waitFor在前面
+    await page.locator('.bg-success').allTextContents()              //allTextContents不会等待，并且返回为array
+      expect(page.locator('.bg-success').allTextContents()).toEqual('Data loaded') // 会failed，因为它是array
+      expect(page.locator('.bg-success').allTextContents()).toContain('Data loaded') // 会成功
 
+      await page.locator('successButton').waitFor({ state:"attached"}) // attached / detached / visible / hidden
+      await page.locator('#submit-button').waitFor({ state: 'visible' });  // Wait for the button to become visible
+      await page.locator('#submit-button').waitFor({ state: 'visible', timeout: 5000 }); //Wait for visible + timeout
+
+    //我们也可以手动在code里修改 auto-wait timeout
     await expect(page.locator('.bg-success')).toHaveText('Data loaded') //会自动等待，但是 expect()只有5秒
     await expect(page.locator('.bg-success')).toHaveText('Data loaded',{timeout:30000})  // 在命令中强制成30秒
 
-  // --- 对于不会自动等待的功能，需要用变通的方法，在其前面增加可以自动等待的功能 locator.waitFor()
-        // attached / detached / visible / hidden
-    await page.locator('.bg-success').waitFor({state:"attached"})    //allTextContents不会等待，所以增加一个waitFor在前面
-    await page.locator('.bg-success').allTextContents()              //allTextContents不会等待，并且返回为array
-                expect(page.locator('.bg-success').allTextContents()).toEqual('Data loaded') // 会failed，因为它是array
-                expect(page.locator('.bg-success').allTextContents()).toContain('Data loaded') // 会成功
-  // --- 对于不会自动等待的功能，变通方法 2 -- page.waitForXXX()
+  // --- 对于不会自动等待的功能，变通方法 2 -- page.waitForXXX() <--> 对比前面则是locator.waitfor()
     // page.waitForLoadState() / page.waitForResponse / page.waitForSelector / page.waitForTimeout /etc..
       // wait for element
     await page.waitForSelector('.bg-success')
@@ -289,18 +373,14 @@ test('test 01', async ({ page }) => {
       // wait for particular response
     await page.waitForResponse('http://abc.com')   // 填入 发出request的‘header’中的URL， 系统会等待API call返回
       // wait for network call to be completed
-    await page.waitForLoadState('load')  // wait until load event to be fired
+    await page.waitForLoadState('load')     //等待直至load state 状态变成  "load / documentloaded / networkidle"
     await page.waitForLoadState('domcontentloaded')  // wait until DOM contruction to be completed
       // wait for a particular page (when you navigate to a special page)
-    await page.waitForURL('http://abc.com') 
-
-    await page.waitForLoadState("load")                             // load / documentloaded / networkidle
-    await page.locator('successButton').waitFor({ state:"attached"}) // attached / detached / visible / hidden
-    await page.locator('#submit-button').waitFor({ state: 'visible' });  // Wait for the button to become visible
-    await page.locator('#submit-button').waitFor({ state: 'visible', timeout: 5000 }); //Wait for visible + timeout
+    await page.click('a.delayed-navigation'); // Clicking the link will indirectly cause a navigation
+    await page.waitForURL('**/target.html');  // Waits for the frame to navigate to the given URL.
 
 
-  /*  -- 32. Time out --- （有层级关系，且下级timeout不能超过上级）
+  /*  *** 32. Time out *** （有层级关系，且下级timeout不能超过上级）
     1. Global timeout is the time limit of the whole test run.    (default: No timeout)
       2. Test timeout is the time limit for a single test execution.  (default: 30秒)
         3-1. Action timeout      (Ex: click(),fill(),textContent(),etc.. --> no default)
@@ -317,41 +397,50 @@ test('test 01', async ({ page }) => {
 
 
 //============================== < Section 5 - UI components > ==============================//
-  // input field
-    const gridEmailInput= page.locator('nb-card').getByRole('textbox',{name:"Email"})
-    await gridEmailInput.fill('nwqa@adesa.com')
-    await gridEmailInput.clear()
-    await gridEmailInput.pressSequentially('nwqa@adesa.com',{delay:1000}) //模拟键盘输入，并可设置延迟每1秒输入一个字符
-    await gridEmailInput.type('nwqa@adesa.com',{delay:1000})              //另一种延迟方法
+  
+// *** 33. input field   参见 uiComponent.spec.ts 文件的 test.describe('Form Layouts page'）下的test('input fields'）
+  const gridEmailInput= page.locator('nb-card').getByRole('textbox',{name:"Email"})
+  await gridEmailInput.fill('nwqa@adesa.com')
+  await gridEmailInput.clear()
+  await gridEmailInput.pressSequentially('nwqa@adesa.com',{delay:1000}) //模拟键盘输入，并可设置延迟每1秒输入一个字符
+  await gridEmailInput.type('nwqa@adesa.com',{delay:1000})              //另一种延迟方法
 
-  // Input assertion
-    await expect(gridEmailInput).toHaveValue('nwqa@adesa.com') 
-    // or
-    const inputValue = await gridEmailInput.inputValue()
-    expect(inputValue).toEqual('nwqa@adesa.com')
+  //generic assertion
+  const inputValue = await usingTheGridEmailInput.inputValue() ;
+  expect(inputValue).toEqual('test2@test.com');
+  //locator assertion
+  await expect(usingTheGridEmailInput).toHaveValue('test2@test.com');
 
-  // radio button
-    const gridForm = page.locator('nb-card',{hasTex:"Using the Grid"});
-    await gridForm.getByLabel('Option 1').check()              //选中checkbox和radiobutton中选项
-    await gridForm.getByLabel('Option 1').check({force:true})  //有时选项会invisible或被blocked,force参数可绕过可用性检查
-    await gridForm.getByRole('radio',{name:"Option 1"}).check();  // 推荐使用getByRole
-     // assertion 
-    await gridForm.getByLabel('Option 1').isChecked()              //返回布尔值，判断是否已经选中   
-    await expect(gridForm.getByLabel('Option 1')).toBeChecked()    // assertion
-    expect(await gridForm.getByLabel('Option 1').isChecked()).toBeTruthy()
-    expect(await gridForm.getByLabel('Option 2').isChecked()).toBeFalsy()
 
-  // Check Box
-    await gridForm.getByText('Modal').click({force:true})   //注意check与click的区别,
-    await gridForm.getByText('Modal').check({force:true})   //有时选项会invisible或被blocked,force参数可绕过可用性检查
-    await gridForm.getByRole('checkbox',{name:"Hide on click"}).uncheck()  //推荐使用getByRole
-    // 遍历所有checkbox子选项
-    const allBox = page.getByRole('checkbox')     // uncheck所有checkbox选项
-    for (const box of await allBox.all()){
-      await box.uncheck({force:true})
-    }
+// *** 34. radio button
+  const gridForm = page.locator('nb-card',{hasTex:"Using the Grid"});
+  await gridForm.getByLabel('Option 1').check()              //选中checkbox和radiobutton中选项
+  await gridForm.getByLabel('Option 1').check({force:true})  //有时选项会invisible或被blocked,force参数可绕过可用性检查
+  await gridForm.getByRole('radio',{name:"Option 1"}).check();  // 推荐使用getByRole
+   // assertion 
+  await gridForm.getByLabel('Option 1').isChecked()              //返回布尔值，判断是否已经选中   
+  await expect(gridForm.getByLabel('Option 1')).toBeChecked()    // assertion
+  expect(await gridForm.getByLabel('Option 1').isChecked()).toBeTruthy()
+  expect(await gridForm.getByLabel('Option 2').isChecked()).toBeFalsy()
 
-  // Dropdown list / listbox
+  
+  
+  
+  
+// Check Box
+  await gridForm.getByText('Modal').click({force:true})   //注意check与click的区别,
+  await gridForm.getByText('Modal').check({force:true})   //有时选项会invisible或被blocked,force参数可绕过可用性检查
+  await gridForm.getByRole('checkbox',{name:"Hide on click"}).uncheck()  //推荐使用getByRole
+  // 遍历所有checkbox子选项
+  const allBox = page.getByRole('checkbox')     // uncheck所有checkbox选项
+  for (const box of await allBox.all()){
+    await box.uncheck({force:true})
+  }
+
+ 
+ 
+ 
+    // Dropdown list / listbox
     const dropDownMenu = page.locator('ngx-header nb-select') //在该实例中code中无dropdown，只能用tag的层叠来定位，先找到menu框,见截图
     await dropDownMenu.click()      //会展开下拉菜单
 
@@ -365,7 +454,10 @@ test('test 01', async ({ page }) => {
 
     await expect(page.locator('nb-layout-header')).toHaveCSS('background-color','rgb(50,50,90)') //验证背景颜色是否是指定值
 
-  // Tooltip
+  
+  
+  
+    // Tooltip
     const toolTip = page.getByRole('tooltip')             //如果code里面有标出tooltip role，则这种方法最好
     page.locator('nb-card',{hasText:"tooltip placement"}) //在本例中code里无tooltip，只好通过tag再加tooltip的内容来定位
     await toolTip.getByRole('button',{name:"Top"}).hover()
@@ -374,6 +466,8 @@ test('test 01', async ({ page }) => {
 
   // Dialog Boxes
 
+ 
+ 
   // Web tables
 
 
