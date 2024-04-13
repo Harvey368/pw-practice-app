@@ -157,8 +157,8 @@ test.describe('suite1',()=> {
 /* ***   23. DOM Terminology ***
 1. HTML dom consists of HTML tags, HTML attributes and attribute values.
 2. Class and ID are also HTML attribute names.
-   Class attribute can have a several values and each value is separated by space.
-3. HTML tags usually come in pairs of opening and closing tag. Closing tag has the same name and the forward slash. <> </>
+  Class attribute can have a several values and each value is separated by space.
+3. HTML tags usually come in pairs of opening and closing tag. Closing tag has the same name and the forward slash.<></>
 4. Value in between the angle braces is a plain text or HTML text.
 复习随附 DOM 结构说明
 Tag -> Attribute -> Value      一个Attribute 可能没有value，也可以有多个value， 例如 class
@@ -270,9 +270,12 @@ test('test 01', async ({ page }) => {
        //Filter可以并联使用，第一个filter运行后是返回一个‘nb-card’的列表，可以继续filter
   page.locator(':text-is("Using the Grid")').locator('..')  // locator('..') 代表找当前元素的上一级元素
 
-  //In order to find a web element using a locator method, you can use a text filter or a locator filter, and then chain from this parent element all the child elements that you want to select. 
-  //Also, you can alternatively use a filter method that will do exactly the same thing, what is the benefit of using a filter method that you can chain multiple filters one by one, narrowing down your output to the unique element until you get the desired result.
-  //==========================================
+  /* In order to find a web element using a locator method, you can use a text filter or a locator filter, and then chain 
+    from this parent element all the child elements that you want to select. 
+    Also, you can alternatively use a filter method that will do exactly the same thing, what is the benefit of using a 
+    filter method that you can chain multiple filters one by one, narrowing down your output to the unique element until 
+    you get the desired result.
+  */
 
   // *** 28. Reusing Locators
     const basicForm= page.locator('nb-card').filter({hasText:"Basic form"});
@@ -298,7 +301,7 @@ test('test 01', async ({ page }) => {
   // .innerHtml(): Returns the innerHTML of an element, which is the HTML content inside the element.
 
   // == get element attributes 
-  const placeholderValue = await page.getByRole('textbox',{name:"Email"}).getAttribute('placeholder') //获得被定位元素的p属性
+  const placeholderValue = await page.getByRole('textbox',{name:"Email"}).getAttribute('placeholder')//获得被定位元素的p属性
   expect(placeholderValue).toEqual('Email')
   // 注意它的返回有可能有多个，变成一个list
 
@@ -310,7 +313,7 @@ test('test 01', async ({ page }) => {
   expect(value).toContain('Email')    
 
   //= Locator assertions -> 用鼠标hover 会看到 “LocatorAssertions”，是直接对 Locator()返回的 DOM 对象的操作，需加 await
-  await expect(page.getByPlaceholder('Click to add notes')).toHaveValue('Add Note');
+  await expect(page.getByPlaceholder('Click to add notes')).toHaveValue('Add Note'); // 可以用value定位
   await expect(page.locator('inputbox')).toHaveText('Submit')  //更智能，会retry，多了一些对元素的操作
   await expect(page.locator('nb-layout-header')).toHaveCSS('background-color','rgb(50,50,90)') //验证背景颜色是否是指定值
   await expect(page.locator('inputbox')).toBeChecked()  
@@ -418,9 +421,9 @@ test('test 01', async ({ page }) => {
     
     await usingTheGridForm.getByLabel('Option 1').check()              //然后 选中checkbox和radiobutton中选项 进行操作
     // await usingTheGridForm.getByLabel('Option 1').check({force: true})
-     /* 在这个例子中 DOM有三层 label -> Input -> Span -> "Option 1", 但是在input这一层时 class=“visually-hidden”， 
-     如果我们只是 await usingTheGridForm.getByLabel('Option 1').check() 则会失败，无法选中该radio  因为check()有自动等待功能，
-     会等待元素可见，我们需要给它加上 {force: true} 来让check()不等待，强行选中 
+    /* 在这个例子中 DOM有三层 label -> Input -> Span -> "Option 1", 但是在input这一层时 class=“visually-hidden”， 
+    如果我们只是 await usingTheGridForm.getByLabel('Option 1').check() 则会失败，无法选中该radio  因为check()有自动等待功能，
+    会等待元素可见，我们需要给它加上 {force: true} 来让check()不等待，强行选中 
      --> 所以Playwright 推荐使用getbyRole */
     await usingTheGridForm.getByRole('radio', {name: "Option 1"}).check({force: true})   // 操作 推荐getByRole()
 
@@ -456,8 +459,8 @@ test('test 01', async ({ page }) => {
   // 也可以改写成：
   //  const allBoxArray = await page.getByRole('checkbox').all();   
   //  for (const box of allBoxArray){
- 
- 
+
+
 // *** 36. List and Dropdown / listbox
     const dropDownMenu = page.locator('ngx-header nb-select') //在该实例中code中无dropdown，只能用tag的层叠来定位，先找到menu框,见截图
     await dropDownMenu.click()      //会展开下拉菜单
@@ -515,13 +518,60 @@ test('test 01', async ({ page }) => {
     
 
 //*** 38. Dialog Boxes
+// Modal->Dialog 菜单下包含 第一种 dialog -> Web dialog box -> part of the DOM, 可以使用 inspect 来定位
+// Tables-> Smart table 菜单下包含第二种 -> Browser dialog box -> 无法使用 inspect 来定位
 
- 
- 
-  // Web tables
+  page.on('dialog', dialog => {            // page.on(event, listener:()=>{}) 添加一个 listener（dialog event）
+    expect(dialog.message()).toEqual('Are you sure you want to delete?')        //验证是我操作弹出的对话框
+    dialog.accept()     
+  })         //如果不加这个，在下面步骤中点击删除按钮后会弹出 browser 的对话框，可惜它会自动取消，因为没有人按 确定键
+
+  await page.getByRole('table').locator('tr', {hasText: "mdo@abc.com"}).locator('.nb-trash').click()//点删除按钮
+  await expect(page.locator('table tr').first()).not.toHaveText('mdo@gmail.com')  //验证原来那行已经消失
 
 
-  // page.locator().all()  // locator 后取回的是DOM 对象，用all可以转成Array，然后就可以用 loop 等功能
+//*** 39.  Web tables - 1
+  /* table 大致有以下几层 <table> / <thead> / <tbody> / <tr> / <td>
+      即：table / table head / table body / table row / table data cell
+      定位通常是根据某一个unique value来找到该数据row，在横向去寻找需要操作的element，比如 删除，添加等等操作
+      很多时候难点在于无法取得 竖向的元素值，因为<td>都是包裹在<tr>里面 
+  */
+  //getByRole()是一个很好用的定位表格元素的方法，下面就是用该行拥有的email值来定位该行
+    const targetRow = page.getByRole('row', {name: "twitter@outlook.com"}) 
+    await targetRow.locator('.nb-edit').click()      //在该 row 中定位并点击 编辑按钮
+
+  //本例中还有一个难点，用户的email原来是表中一个text，然后在点击编辑按钮后，表格进入编辑模式，此时再去定位时会发现text不见了
+  //此时email 变成了一个property，变成了一个value  本例中变成了 ng-reflect-model="twitter@outlook.com"
+  //例如我需要修改用户的年龄，可是在编辑模式下，年龄变成了一个input value，所以我可以改用placeholder 来定位
+  await page.locator('input-editor').getByPlaceholder('Age').clear() 
+  await page.locator('input-editor').getByPlaceholder('Age').fill('35') 
+  await page.locator('.nb-checkmark').click()
+
+  //另外一难点是 不同的row可以有相同的值，哪怕是unique ID,例如A用户ID# 就可以与B用户年龄值一样，这样在getbyrole('row')出问题
+  //以下例子就是添加filter -> page.locator('td').nth(1).getByText('11') 即根据表格的第二个元素有text“11”来筛选
+  page.getByRole('row', {name: "11"}).filter({has: page.locator('td').nth(1).getByText('11')}) 
+  
+//*** 40.  Web tables - 2
+  // 本例是测试table 的filter 功能，即用户在页面上设定筛选条件，例如用户年龄为20岁
+  await page.locator('input-filter').getByPlaceholder('Age').clear() 
+  await page.locator ('input-filter').getByPlaceholder('Age').fill('20') 
+
+  const ageRows = await page.locator('tbody tr').all()  
+  for(let row of ageRows ){}   //locator 后取回的是DOM 对象，用all()可以转成Array，然后就可以用 loop 等功能
+
+
+
+//*** 41. Data picker 1 ***/
+
+
+//*** 42. Data picker 2 ***/
+
+
+//*** 43. Slider ***/
+
+
+//*** 44. Drag & Drop with iFrames ***/
+
 
 //============================== < Secion 5 - End > ==============================
 
