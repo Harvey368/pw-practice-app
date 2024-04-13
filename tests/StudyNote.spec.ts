@@ -100,7 +100,8 @@ Section 9: Final Words
 // page.goto + waitUntil
 test('test 01', async ({ page }) => {
     await page.goto('https://example.com', { waitUntil: 'domcontentloaded' });  
-    // 在调用 page.goto() 后，页面会导航到指定的 URL，然后脚本会等待直到 'DOMContentLoaded' 事件被触发，然后再继续执行后续的代码。=>  waitUntil?: "load"|"domcontentloaded"|"networkidle"|"commit"
+    // 在调用 page.goto() 后，页面会导航到指定的 URL，然后脚本会等待直到 'DOMContentLoaded' 事件被触发，然后再继续执行后续的代码。=> 
+    //   waitUntil?: "load"|"domcontentloaded"|"networkidle"|"commit"
     // load 事件在整个页面和所有其资源（例如图片、样式表、脚本等）都加载完成后触发。
     // DOMContentLoaded 事件在 HTML 文档加载完成并且解析完成后触发，而不必等待样式表、图像和子框架的加载完成。
     // ** playwright 的function 有些return 的是Promise， 那么前面就必须加 Await。 例如这个page.goto() 
@@ -156,7 +157,7 @@ test.describe('suite1',()=> {
 /* ***   23. DOM Terminology ***
 1. HTML dom consists of HTML tags, HTML attributes and attribute values.
 2. Class and ID are also HTML attribute names.
-  Class attribute can have a several values and each value is separated by space.
+   Class attribute can have a several values and each value is separated by space.
 3. HTML tags usually come in pairs of opening and closing tag. Closing tag has the same name and the forward slash. <> </>
 4. Value in between the angle braces is a plain text or HTML text.
 复习随附 DOM 结构说明
@@ -413,58 +414,107 @@ test('test 01', async ({ page }) => {
 
 
 // *** 34. radio button
-  const gridForm = page.locator('nb-card',{hasTex:"Using the Grid"});
-  await gridForm.getByLabel('Option 1').check()              //选中checkbox和radiobutton中选项
-  await gridForm.getByLabel('Option 1').check({force:true})  //有时选项会invisible或被blocked,force参数可绕过可用性检查
-  await gridForm.getByRole('radio',{name:"Option 1"}).check();  // 推荐使用getByRole
-   // assertion 
-  await gridForm.getByLabel('Option 1').isChecked()              //返回布尔值，判断是否已经选中   
-  await expect(gridForm.getByLabel('Option 1')).toBeChecked()    // assertion
-  expect(await gridForm.getByLabel('Option 1').isChecked()).toBeTruthy()
-  expect(await gridForm.getByLabel('Option 2').isChecked()).toBeFalsy()
+    const usingTheGridForm = page. locator('nb-card', {hasText: "Using the Grid"})  // 先找到整个大模块
+    
+    await usingTheGridForm.getByLabel('Option 1').check()              //然后 选中checkbox和radiobutton中选项 进行操作
+    // await usingTheGridForm.getByLabel('Option 1').check({force: true})
+     /* 在这个例子中 DOM有三层 label -> Input -> Span -> "Option 1", 但是在input这一层时 class=“visually-hidden”， 
+     如果我们只是 await usingTheGridForm.getByLabel('Option 1').check() 则会失败，无法选中该radio  因为check()有自动等待功能，
+     会等待元素可见，我们需要给它加上 {force: true} 来让check()不等待，强行选中 
+     --> 所以Playwright 推荐使用getbyRole */
+    await usingTheGridForm.getByRole('radio', {name: "Option 1"}).check({force: true})   // 操作 推荐getByRole()
+
+    // assertion 
+    const radioStatus = await usingTheGridForm.getByRole('radio', {name: "Option 1"}).isChecked() //返回 true/false
+    expect(radioStatus).toBeTruthy()                                                    //检查方法 1 - Generic assertion 
+
+    await expect(usingTheGridForm.getByRole('radio', {name: "Option 1"})).toBeChecked() //检查方法 2 - locator assertion 
+
+    // 下面这个例子是检查 当用户再点击选择 “option 2”时，option_1应该自动 unchecked，而option_2 为 checked 状态
+    await usingTheGridForm.getByRole('radio', {name: "Option 2"}).check({force: true}) 
+    expect (await usingTheGridForm.getByRole('radio', {name: "Option 1"}).isChecked()).toBeFalsy() 
+    expect (await usingTheGridForm.getByRole('radio', {name: "Option 2"}).isChecked()).toBeTruthy()
+
 
   
-  
-  
-  
-// Check Box
-  await gridForm.getByText('Modal').click({force:true})   //注意check与click的区别,
-  await gridForm.getByText('Modal').check({force:true})   //有时选项会invisible或被blocked,force参数可绕过可用性检查
-  await gridForm.getByRole('checkbox',{name:"Hide on click"}).uncheck()  //推荐使用getByRole
+// *** 35. Check Box
+  // 菜单 Modal->子菜单 Toastr 下包含 checkbox 
+  await page.getByText( 'Modal & Overlays').click()    // 像这种菜单项的定位使用 getByText()非常方便
+  await page.getByText('Toastr').click()
+
+  await usingTheGridForm.getByText('Modal').click({force:true})   //注意check与click的区别,
+  await usingTheGridForm.getByText('Modal').check({force:true})   //有时选项会invisible或被blocked,force参数可绕过可用性检查
+  // 在这里要注意 check 与 click 的区别。 click是翻转，而check是确保选中。如原先已经选中，则check不会改变现状，而click不同
+
+  // 单个 check box 选中
+  await usingTheGridForm.getByRole('checkbox',{name:"Hide on click"}).uncheck()  //推荐使用getByRole
   // 遍历所有checkbox子选项
-  const allBox = page.getByRole('checkbox')     // uncheck所有checkbox选项
-  for (const box of await allBox.all()){
+  const allBox = page.getByRole('checkbox')     // uncheck所有checkbox选项  -> 小心此时allBox 是一个对象合集，但不是Array
+  for (const box of await allBox.all()){        // all() 把前面locator所返回的对象转换成 Array
     await box.uncheck({force:true})
   }
-
+  // 也可以改写成：
+  //  const allBoxArray = await page.getByRole('checkbox').all();   
+  //  for (const box of allBoxArray){
  
  
- 
-    // Dropdown list / listbox
+// *** 36. List and Dropdown / listbox
     const dropDownMenu = page.locator('ngx-header nb-select') //在该实例中code中无dropdown，只能用tag的层叠来定位，先找到menu框,见截图
     await dropDownMenu.click()      //会展开下拉菜单
 
-    page.getByRole('list')          //when the list has a 'ul' tag  /在本例中有
-    page.getByRole('listitem')      //when the list has 'li' tag    /在本例中就没有，而是‘nb-obtion'
+    page.getByRole('list')          //when the list has a 'ul' tag / ul and li 是标准的HTML list的item, 在本例中有ul 
+    page.getByRole('listitem')      //when the list has 'li' tag    /在本例中就没有这个list item，而是用‘nb-obtion'
 
-    const optionList= page.getByRole('list').locator('nb-option')   // return array
-    const optionList2= page.locator('nb-option-list nb-option')     //这两种写法都可以
-    await expect(optionList).toHaveText(["Light","Dark","Cosmic"])    //验证列表选项
-    await optionList.filter({hasText:'Dark'}).click()               //选中列表中某选项
+    const optionList= page.getByRole('list').locator('nb-option')   // 写法 1， return 多个items
+    const optionList2= page.locator('nb-option-list nb-option')     // 写法 2， 这两种写法都可以
+    await expect(optionList).toHaveText(["Light","Dark","Cosmic"])   //验证列表选项 内含多个items 
+    await optionList.filter({hasText:'Dark'}).click()                //选中列表中某选项
 
-    await expect(page.locator('nb-layout-header')).toHaveCSS('background-color','rgb(50,50,90)') //验证背景颜色是否是指定值
+    // 如果测试需要验证 颜色color 等等UI 属性，参考下例 -> 重看视频看其如何提取元素的RGB值
+    await expect(page.locator('nb-layout-header')).toHaveCSS('background-color','rgb(50,50,90)') 
+      //toHaveCSS(name: string, value: string), 验证背景颜色是否是指定值
 
-  
-  
-  
-    // Tooltip
+      const colors = {     // 定义一个 color 的 object 来存储 ， 格式：“键名：键值”
+        "Light": "rgb(255, 255, 255)",
+        "Dark": "rgb(34, 43, 69)", 
+        "Cosmic": "rgb(50, 50, 89)",
+        "Corporate": "rgb(255, 255, 255)"
+    }
+
+    await dropDownMenu.click()       
+    for(const color in colors) {      // Colors是 Object，存有 “颜色名：RGB值”，这里遍历的是'颜色名',而非RGB值，这里color是颜色名
+        await optionList.filter({hasText: color}).click()
+        await expect (page.locator('nb-layout-header')).toHaveCSS('background-color', colors[color]) // 这里用的是RGB值
+        await dropDownMenu.click()
+    }
+    /* For-Loop 有 3种类型
+      1. for {var i=1 ; i<=5; i++} ()
+      2. for (const element of array) {}  用于遍历可迭代对象的值
+      3. for (const color in colors) {}  用于遍历对象的属性, 例如colors是 Object，存有 “颜色名：RGB值”，遍历的是'颜色',而非RGB值
+
+      for...of 循环会按元素的索引顺序遍历元素。
+      for...in 循环的遍历顺序“不确定”。它取决于对象的属性定义方式
+
+      const numbers = [10, 20, 30, 40, 50];
+        1. 使用 for...of 循环遍历数组  for (const number of numbers) {console.log(number)} // 输出：10 20 30 40 50
+        2. 使用 for...in 循环遍历数组  for (const index in numbers) {console.log( numbers[index] )} 输出：10 20 30 40 50
+    */ 
+
+//*** 37. Tooltip
+    // tooltip 的困难在于当鼠标移开时就会消失，用 inspect 时 DOM 会collapse起来，所以是无法从code里面看到的
+    // 方法： 在inspect里打开 Source Tab，鼠标移回button上方，等待tooltip 出现后使用 'command' + '\' 可以冻结窗口，WIN系统是 F8，
+    // 此时进入 debug 模式， 再选择回 Element Tab，此时就可以点击展开原来 collapse 的 DOM 了，本例中会发现label <nb-tooltip>
     const toolTip = page.getByRole('tooltip')             //如果code里面有标出tooltip role，则这种方法最好
     page.locator('nb-card',{hasText:"tooltip placement"}) //在本例中code里无tooltip，只好通过tag再加tooltip的内容来定位
-    await toolTip.getByRole('button',{name:"Top"}).hover()
-    await page.locator('nb-tooltip').textContent()         //取得tooltip里弹出文字
 
+    await toolTip.getByRole('button',{name:"Top"}).hover()  //方法 1: 找到 标识有“Top”的button 并 hover()
+    page.getByRole('tooltip') //定位方法2 - if you have a role ‘tooltip’ created in code，但本例中不适用
 
-  // Dialog Boxes
+    const tooltip = await page.locator('nb-tooltip').textContent()     // 取得tooltip里弹出文字
+    expect(tooltip).toEqual('This is a tooltip')
+    
+
+//*** 38. Dialog Boxes
 
  
  
