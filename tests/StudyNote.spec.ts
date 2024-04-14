@@ -402,7 +402,8 @@ test('test 01', async ({ page }) => {
 
 //============================== < Section 5 - UI components > ==============================//
   
-// *** 33. input field   参见 uiComponent.spec.ts 文件的 test.describe('Form Layouts page'）下的test('input fields'）
+// *** 33. input field  ***/            
+  // 参见 uiComponent.spec.ts 文件的 test.describe('Form Layouts page'）下的test('input fields'）
   const gridEmailInput= page.locator('nb-card').getByRole('textbox',{name:"Email"})
   await gridEmailInput.fill('nwqa@adesa.com')
   await gridEmailInput.clear()
@@ -416,7 +417,7 @@ test('test 01', async ({ page }) => {
   await expect(usingTheGridEmailInput).toHaveValue('test2@test.com');
 
 
-// *** 34. radio button
+// *** 34. radio button ***/            
     const usingTheGridForm = page. locator('nb-card', {hasText: "Using the Grid"})  // 先找到整个大模块
     
     await usingTheGridForm.getByLabel('Option 1').check()              //然后 选中checkbox和radiobutton中选项 进行操作
@@ -440,7 +441,7 @@ test('test 01', async ({ page }) => {
 
 
   
-// *** 35. Check Box
+// *** 35. Check Box***/            
   // 菜单 Modal->子菜单 Toastr 下包含 checkbox 
   await page.getByText( 'Modal & Overlays').click()    // 像这种菜单项的定位使用 getByText()非常方便
   await page.getByText('Toastr').click()
@@ -461,7 +462,7 @@ test('test 01', async ({ page }) => {
   //  for (const box of allBoxArray){
 
 
-// *** 36. List and Dropdown / listbox
+// *** 36. List and Dropdown / listbox ***/            
     const dropDownMenu = page.locator('ngx-header nb-select') //在该实例中code中无dropdown，只能用tag的层叠来定位，先找到menu框,见截图
     await dropDownMenu.click()      //会展开下拉菜单
 
@@ -503,7 +504,7 @@ test('test 01', async ({ page }) => {
         2. 使用 for...in 循环遍历数组  for (const index in numbers) {console.log( numbers[index] )} 输出：10 20 30 40 50
     */ 
 
-//*** 37. Tooltip
+//*** 37. Tooltip ***/            
     // tooltip 的困难在于当鼠标移开时就会消失，用 inspect 时 DOM 会collapse起来，所以是无法从code里面看到的
     // 方法： 在inspect里打开 Source Tab，鼠标移回button上方，等待tooltip 出现后使用 'command' + '\' 可以冻结窗口，WIN系统是 F8，
     // 此时进入 debug 模式， 再选择回 Element Tab，此时就可以点击展开原来 collapse 的 DOM 了，本例中会发现label <nb-tooltip>
@@ -517,7 +518,7 @@ test('test 01', async ({ page }) => {
     expect(tooltip).toEqual('This is a tooltip')
     
 
-//*** 38. Dialog Boxes
+//*** 38. Dialog Boxes ***/            
 // Modal->Dialog 菜单下包含 第一种 dialog -> Web dialog box -> part of the DOM, 可以使用 inspect 来定位
 // Tables-> Smart table 菜单下包含第二种 -> Browser dialog box -> 无法使用 inspect 来定位
 
@@ -530,7 +531,7 @@ test('test 01', async ({ page }) => {
   await expect(page.locator('table tr').first()).not.toHaveText('mdo@gmail.com')  //验证原来那行已经消失
 
 
-//*** 39.  Web tables - 1
+//*** 39.  Web tables - 1 ***/            
   /* table 大致有以下几层 <table> / <thead> / <tbody> / <tr> / <td>
       即：table / table head / table body / table row / table data cell
       定位通常是根据某一个unique value来找到该数据row，在横向去寻找需要操作的element，比如 删除，添加等等操作
@@ -551,7 +552,7 @@ test('test 01', async ({ page }) => {
   //以下例子就是添加filter -> page.locator('td').nth(1).getByText('11') 即根据表格的第二个元素有text“11”来筛选
   page.getByRole('row', {name: "11"}).filter({has: page.locator('td').nth(1).getByText('11')}) 
   
-//*** 40.  Web tables - 2
+//*** 40.  Web tables - 2 ***/            
   // 本例是测试table 的filter 功能，即用户在页面上设定筛选条件，例如用户年龄为20岁
   await page.locator('input-filter').getByPlaceholder('Age').clear() 
   await page.locator ('input-filter').getByPlaceholder('Age').fill('20') 
@@ -561,16 +562,99 @@ test('test 01', async ({ page }) => {
 
 
 
-//*** 41. Data picker 1 ***/
+//*** 41. Date picker 1 ***/                   
+  // 普通日期选择器结构为 <nb-calendar-picker> / <nb-calendar-picker-row> / <nb-calendar-day-cell> / 日期值
+  // 难点在于本月中会有上月尾与下月初同时出现，比如7月的1号与8月的1号会同时出现在7月的picker中，需要限定仅当月的被选中
+  // 在本例中我们可以 看到在<day-cell>中class 含多个的属性会，其中以“bounding-month"来代表其不是当月的日期
+  // 例如 当月的是[class="day-cell ng-star-inserted"]，非当月的是[class="bounding-month day-cell ng-star-inserted"]
+  // page.locator('[class="day-cell ng-star-inserted"]').getByText(‘15’).click() 即可点击15号日期
+  // 另外的问题是 如果getByText(‘1’)，它会返回 1,11,12,13...,19,21,31, 所以需要加 {exact: true}来限定
+  await page.locator('[class="day-cell ng-star-inserted"]').getByText('1', {exact: true}).click()
+  await expect(page.getByPlaceholder('Form Picker')).toHaveValue('Jun 1,2024')  //最后textbox中的值
 
 
-//*** 42. Data picker 2 ***/
+//*** 42. Date picker 2 ***/        
+  //-> 自动选择日期 /JS日期函数 https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date 
+  // const expectDate = new Date('July 19, 2024 20:00:00')   -> create a Date 
+  let date = new Date()                              // JS feature
+  date.setDate(date.getDate() + 7)                   // getdate 返回“日”，类型为数字,再用setdate创建 +7天
+  const expectedDate = date.getDate().toString()
+  const expectedMonthShot = date.toLocaleString('En-US', {month: 'short'}) //本例中textbox用short格式(3位长)
+  const expectedMonthLong = date.toLocaleString('En-US', {month: 'long'})  //date picker的header中年月为long格式
+  const expectedYear = date.getFullYear()
+  const dateToAssert = `${expectedMonthShot} ${expectedDate}, ${expectedYear}`
+
+  await page.locator('[class="day-cell ng-star-inserted"]').getByText(expectedDate, {exact: true}).click()
+  await expect(page.getByPlaceholder('Form Picker')).toHaveValue(dateToAssert)
+
+  // 如果需要增加超过一个月，则上面的code会failed，需先计算是否需要点击下一页后才可以定位日期值
+  // 所以需要先确定 data picker 的header里面的 月+年 是否是期待值，如果不是则点击下一页，直至到达期待月份 expectedMonthAndYear
+  let calendarMonthAndYear = await page.locator('nb-calendar-view-mode').textContent()
+  const expectedMonthAndYear = `${expectedMonthLong} ${expectedYear}`   // 创建 期待年月 的字符串
+  while(!calendarMonthAndYear.includes(expectedMonthAndYear)){          // string.include() 是否包含子字符串
+      await page.locator('nb-calendar-pageable-navigation [data-name="chevron-right"]').click()
+      calendarMonthAndYear = await page.locator('nb-calendar-view-mode').textContent()
+  }
+  await page.locator('[class="day-cell ng-star-inserted"]').getByText(expectedDate, {exact: true}).click()
+  await expect(page.getByPlaceholder('Form Picker')).toHaveValue(dateToAssert)
 
 
 //*** 43. Slider ***/
+    // method 1: Update attribute 直接修改slider控制块的 位置属性
+    const tempGauge = page.locator('[tabtitle="Temperature"] ngx-temperature-dragger circle')
+    await tempGauge.evaluate( node => {
+        node.setAttribute('cx', '232.630')
+        node.setAttribute('cy', '232.630')
+    })                        
+    // evaluate()方法是 JS中用于在特定 DOM节点的上下文中执行JS代码的方法。即直接修改当前的DOM。
+    // 在本例中，控制滑块为 <ngx-temperature-dragger> / <circle>（参见上面locator）里面有属性 cx=“232.630” cy=“232.630” 
+    // 其代表控制块的 XY坐标，所以我们将locator获取的'circle'传入evaluate()里面定义的函数，通过修改DOM里面XY值来控制滑块移动
+    await tempGauge.click() //因为前面是直接修改属性值，UI缺失event的触发故不会发生改变，补上该步让页面确认前面XY位置的改动
+
+    //method 2: Mouse movement  模拟鼠标移动
+      // 需要先确认 slider 的 area (box)
+      // * dragger 本身有一个属性'ng-reflect-set-value' 代表了当前控制滑块 所代表的值，而非上面cx/cy 代表的位置信息
+    const tempBox = page.locator('[tabtitle="Temperature"] ngx-temperature-dragger') //先找到整个slider (dragger)
+    await tempBox.scrollIntoViewIfNeeded()               // 常用，让 PW 来自动上下滚屏
+
+    const box = await tempBox.boundingBox() 
+    //在PW中，Page/ElementHandle 对象的 boundingBox属性表示包含元素可见内容的矩形区域。它是用于视觉测试和与网页元素交互的工具
+    //PW的 boundingBox()会给从DOM 返回的对象创建一个可以交互的视觉属性: (以左上角为原点的) x坐标/ y坐标/ width /height
+    // **视觉测试网页元素：**您可以使用边界框坐标直观检查页面上元素的位置和大小。
+    // **与网页元素交互：**您可以使用边界框坐标执行诸如单击元素或滚动使其可见之类的操作。
+    // **截取屏幕截图：**您可以使用边界框坐标截取页面的特定区域的屏幕截图。
+    const x = box.x + box.width / 2     
+    const y = box.y + box.height / 2
+    // 上面这个操作目的是将鼠标移动到整个滑块区域的中心位置，并以其为起始点，好控制“增加”与“减少”的操作
+    // box.x 与 box.y 是要取得整个滑动块相对于当前整个页面的位置，加上 width/2 就可以定位到滑动块的中心点，好方便鼠标操作
+    await page.mouse.move(x, y)        //注意PW 的mouse 控制的方法， 这个是移动到指定位置
+    await page.mouse.down()            // 这个是鼠标左键按压不放
+    await page.mouse.move(x +100, y)    // 鼠标按住的同时移动鼠标，先向右移动
+    await page.mouse.move(x+100, y+100)   // 再向下移动，即 “增加”的操作
+    await page.mouse.up()                 // 左键释放
+    await expect(tempBox).toContainText('30')
+
+//*** 44. Drag & Drop with iFrames ***/  
+  // iFrame，全称 Inline Frame，即内联框架，是 HTML 中的一种元素，用于在当前页面中嵌入另一个完整的网页。它就像一个窗口，可以显示
+  // 来自另一个源的 HTML 文档，主要作用是将来自不同来源的内容嵌入到同一个页面中，而无需重新加载整个页面
+  // <iframe src="https://example.com/page.html" width="600" height="400"></iframe>
+  // iFrame 之内，有自己单独一套 的html架构,需要引入frameLocator来定位，见下例
+  await page.goto('https://www.globalsqa.com/demo-site/draganddrop/')
+  const frame = page.frameLocator('[rel-title="Photo Manager"] iframe')
+  await frame.locator('li', {hasText:"High Tatras 2"}).click() 
+
+  // Drag and drop     -> 注意 dragTo(target：locator) 的用法 
+  await frame.locator('li', {hasText:"High Tatras 2"}).dragTo(frame.locator('#trash'))  
+
+  // 方法2： more presice control，即不使用 dragTo()，只用鼠标控制
+  await frame.locator('li', {hasText:"High Tatras 4"}).hover()
+  await page.mouse.down()
+  await frame.locator('#trash').hover()
+  await page.mouse.up()
+
+  await expect(frame.locator('#trash li h5')).toHaveText(["High Tatras 2", "High Tatras 4"])
 
 
-//*** 44. Drag & Drop with iFrames ***/
 
 
 //============================== < Secion 5 - End > ==============================
@@ -631,7 +715,7 @@ test('test 01', async ({ page }) => {
     * record a video
       需要在playwright.config.ts 里面‘use’ 下面打开 video: 'on' /其他选项:‘on-first-retry','retain-on-failre', etc..
       如需高分辨率可以  video:{ mode:'on',
-                             size:{width:1920, height:1080} }
+                            size:{width:1920, height:1080} }
         注意 在plugin里触发测试不会record video，需要用CLI 来
         然后到 test-results 文件夹下可以在对应的测试下看到 webm 文件
         另外运行 npx playwright show-report 也可在网页版report下找到视频

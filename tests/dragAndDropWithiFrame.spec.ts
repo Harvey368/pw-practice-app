@@ -1,12 +1,23 @@
-import {expect} from '@playwright/test'
-import {test} from '../test-options'
+import {test, expect} from '@playwright/test'
 
+test('drag and drop with iframe 01', async({page}) => {
+    await page.goto('https://www.globalsqa.com/demo-site/draganddrop/')
+    await page.locator('li', {hasText:"High Tatras 2"}).click()
+    //以上测试会failed，因为该段代码是位于 iFrame 之内，有自己单独一套 的html架构,需要引入frameLocator，见下例
+})
 
-test('drag and drop with iframe', async({page, globalsQaURL}) => {
-    await page.goto(globalsQaURL)
+test('drag and drop with iframe 02', async({page}) => {
+    await page.goto('https://www.globalsqa.com/demo-site/draganddrop/')
+    const frame = page.frameLocator('[rel-title="Photo Manager"] iframe')
+    await frame.locator('li', {hasText:"High Tatras 2"}).click() 
+})
+
+// 下面是 drag and drop
+test('drag and drop with iframe', async({page}) => {
+    await page.goto('https://www.globalsqa.com/demo-site/draganddrop/')
 
     const frame = page.frameLocator('[rel-title="Photo Manager"] iframe')
-    await frame.locator('li', {hasText:"High Tatras 2"}).dragTo(frame.locator('#trash'))
+    await frame.locator('li', {hasText:"High Tatras 2"}).dragTo(frame.locator('#trash'))  
 
     //more presice control
     await frame.locator('li', {hasText:"High Tatras 4"}).hover()

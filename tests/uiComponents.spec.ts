@@ -195,7 +195,7 @@ test('datepicker', async({page}) => {
 
 
 test('sliders', async({page}) => {
-    // Update attribute
+    // method 1: Update attribute
     const tempGauge = page.locator('[tabtitle="Temperature"] ngx-temperature-dragger circle')
     await tempGauge.evaluate( node => {
         node.setAttribute('cx', '232.630')
@@ -203,7 +203,7 @@ test('sliders', async({page}) => {
     })
     await tempGauge.click()
 
-    //Mouse movement
+    //method 2: Mouse movement
     const tempBox = page.locator('[tabtitle="Temperature"] ngx-temperature-dragger')
     await tempBox.scrollIntoViewIfNeeded()
 
