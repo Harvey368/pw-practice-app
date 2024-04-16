@@ -1,5 +1,5 @@
 import {test, expect} from '@playwright/test'
-import { PageManager } from '../page-objects/pageManager'
+import {PageManager } from '../page-objects/pageManager'
 import {faker} from '@faker-js/faker'
 
 
@@ -37,15 +37,15 @@ test('parametrized methods @smoke', async({page}) => {
 
 
 
-/*
+/*   引入 page Manager 之前
 import {test, expect} from '@playwright/test'
-import {NavigationPage} from '../page-objects/navigationPage'
+import { NavigationPage} from '../page-objects/navigationPage'
 import { FormLayoutsPage } from '../page-objects/formLayoutsPage'
 
 test.beforeEach(async({page}) => { await page.goto('http://localhost:4200/') })
 
 test ('navigate to form page', async({page}) => { 
-    const navigateTo= new NavigationPage(page)
+    const navigateTo= new NavigationPage(page)    // 创建一个新的 Navigation page的实例
     await navigateTo.formLayoutsPage()
     await page.getByRole('textbox', {name:"Email"}).first().pressSequentially('abc@gmail.com',{delay:500})
         await page.waitForTimeout(3000)

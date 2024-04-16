@@ -654,18 +654,103 @@ test('test 01', async ({ page }) => {
 
   await expect(frame.locator('#trash li h5')).toHaveText(["High Tatras 2", "High Tatras 4"])
 
-
-
-
 //============================== < Secion 5 - End > ==============================
+//*** 45. What Is Page Objects  ***/  
+  /* The page object model is a design pattern used in the test automation to organize source code, improve
+  maintainability and reusability of the code.
+  DRY - Don't repeat yourself
+  KISS - Keep it simple stupid 
+  */
+
+//*** 46. First Page Object   ***/  
+  // create a page TS file, 里面有一个class NavigationPage
+  // 在navigationPage.ts 中： 
+  import { Page } from "@playwright/test";
+  export class NavigationPage {
+    readonly page: Page
+
+    constructor(page: Page) {   // constructor 等待 test 传入一个object(page)，其实是一个 fixture
+        this.page = page        // 左右两边的page 是不同的，左边的this.page是local的，即上面readonly的page
+    }                           // 右边的page 是上面constructor 的参数传入的page 
+
+    async formLayoutsPage() {
+        await this.page.getByText('Forms').click()         // 小心这里需要加 this.，操作的是local的page
+        await this.page.getByText('Form Layouts').click()  // 如果没有this则会报错说找不到 name ‘page’ 
+    }
+  }    
+  // 在 test 中
+  import { NavigationPage} from '../page-objects/navigationPage'
+
+  test.beforeEach(async({page}) => { await page.goto('http://localhost:4200/') })
+
+  test ('navigate to form page', async({page}) => { 
+      const navigateTo= new NavigationPage(page)    // 创建一个新的 Navigation page的实例
+      await navigateTo.formLayoutsPage()
+  })
+
+
+//*** 47. Navigation Page Object   ***/  
+  // 本质就是将要测试的功能进行划片，由Navigation page object来导向到每一个小片
+  // 例如 导向到 datepicker ， 导向到 smart table 等等
+  // 小注意点：分解后可能会出现互相冲突的现象。比如一个小片要求点击菜单来展开，另外一个小片也要，这时可能产生冲突
+  // 即运行了A 以后再运行B时 可能因为点击了2次反而造成菜单关闭，故经常需要增加判断来避免
+
+
+//*** 48. Locators in Page Objects   ***/  
+  // Playwright 推荐要把locator 与 method 分离开
+  import { Locator, Page } from "@playwright/test"; //注意这里import了2个fixture，Locator 与 Page
+
+  export class newNavigationPage {
+    readonly page: Page
+    readonly fromLayoutsManuItem: Locator 
+    readonly datepickerMenuItem: Locator 
+    
+    constructor(page: Page) { 
+      this.page = page
+      this.fromLayoutsManuItem = page.getByText('Form Layouts') //把所有的locator都集中到constructor来
+      this.datepickerMenuItem = page.getByText('Datepicker') 
+    }
+
+    async formLayoutsPage() { await this.fromLayoutsManuItem.click()} //把 method 也集中到一起来
+    async datepickerPage() { await this.datepickerMenuItem.click() }
+  }
+
+
+//*** 49. Parametrized Methods    ***/  
+
+
+
+
+//*** 50. Date Picker Page Object   ***/  
+
+
+
+
+
+//*** 51. Page Objects Manager   ***/  
+
+
+
+
+//*** 52. Page Objects Helper Base  ***/  
+
+
+
+
+
+
 
 
 
 //============================== < Secion 6 - Page Object Model > ==============================
 /*
- 1. Page object model is a design pattern used in the test automation to organize source code, improve maintainability and reusability of the code.
- 2. 把对象页面的元素定位工作都集中到一个页面对象中并封装独立出来，其中定义constructor来构建页面，定位元素，同时定义method，
+  1. Page object model is a design pattern used in the test automation to organize source code, improve maintainability and reusability of the code.
+  2. 把对象页面的元素定位工作都集中到一个页面对象中并封装独立出来，其中定义constructor来构建页面，定位元素，同时定义method，
     以后在测试代码中只留下要做的操作，即(调用method)。 如果页面上的元素有修改，则只需要到那个页面对象的文件中修改就好，无需改动测试代码
+
+
+
+
 
 
 
@@ -673,9 +758,7 @@ test('test 01', async ({ page }) => {
 */
 //============================== < Secion 6 - End > ==============================
 
-
-
-//============================== < Secion 7 - Page Object Model > ==============================
+//============================ < Secion 7 - Working with API > ============================
 /*
 */
 //============================== < Secion 7 - End > ================================
