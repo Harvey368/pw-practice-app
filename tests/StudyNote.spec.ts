@@ -574,6 +574,7 @@ test('test 01', async ({ page }) => {
 
 
 //*** 42. Date picker 2 ***/        
+  // 本例子是介绍 单日期选择， 日期的范围选择则参考 50. date paicker page object
   //-> 自动选择日期 /JS日期函数 https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date 
   // const expectDate = new Date('July 19, 2024 20:00:00')   -> create a Date 
   let date = new Date()                              // JS feature
@@ -676,6 +677,7 @@ test('test 01', async ({ page }) => {
     async formLayoutsPage() {
         await this.page.getByText('Forms').click()         // 小心这里需要加 this.，操作的是local的page
         await this.page.getByText('Form Layouts').click()  // 如果没有this则会报错说找不到 name ‘page’ 
+        //另外注意 在这个class中，page是本身的属性之一，写async函数时无需传入参数(page)，内部直接 this.page
     }
   }    
   // 在 test 中
@@ -713,32 +715,65 @@ test('test 01', async ({ page }) => {
 
     async formLayoutsPage() { await this.fromLayoutsManuItem.click()} //把 method 也集中到一起来
     async datepickerPage() { await this.datepickerMenuItem.click() }
-  }
+
 
 
 //*** 49. Parametrized Methods    ***/  
-
-
-
+  /**     输入 “/**” 系统会自动建立一个参数说明块
+       *    -->输入函数代码说明 
+       * @param name       - XXXXXXXX     在VS中用鼠标悬浮在调用代码时会浮现出此处的说明，以帮助使用
+       * @param email      - XXXXXXXX
+       * @param rememberMe - XXXXXXXX
+       */
+    async sumbitInlineFormWithNameEmailAndCheckbox (name: string, email: string, rememberMe: boolean){
+      const inlineForm = this.page. locator ('nb-card', {hasText: "Inline form"})
+      await inlineForm.getByRole('textbox', {name: "Jane Doe"}).fill(name)
+      await inlineForm.getByRole('textbox', {name: "Email"}).fill(email)
+      if (rememberMe)
+          await inlineForm.getByRole('checkbox').check({force: true}) 
+      await inlineForm.getByRole('button').click()
+    }
 
 //*** 50. Date Picker Page Object   ***/  
-
-
-
-
+  // 本例子是用与 date picker 的 range selection的case, 单个日期参考 41.42. date picker 章节
+  // 思路：将选择具体日期变成一个private的method(selectDateInCalendar)，用于选择 从今天起 n天后的日期
+  async selectDatepickerWithRangeFromToday(startDayFromToday: number, endDayFromToday: number){
+    const calendarInputField = this.page.getByPlaceholder('Range Picker')
+    await calendarInputField.click()
+    const dateToAssertStart = await this.selectDateInTheCalendar(startDayFromToday)
+    const dateToAssertEnd = await this.selectDateInTheCalendar(endDayFromToday)
+    const dateToAssert = `${dateToAssertStart} - ${dateToAssertEnd}`
+    await expect(calendarInputField).toHaveValue(dateToAssert)
+  }
+  // 注意 在 single picker 与 range picker 代码不同，故locator也需升级成可以同时兼容二者的 
+  //class="day-cell ng-star-inserted"             -> locator('[class="day-cell ng-star-inserted"]')
+  //class="range-cell day-cell ng-star-inserted"  -> locator('day-cell.ng-star-inserted')  兼容2者
+}
 
 //*** 51. Page Objects Manager   ***/  
+  /*在实际项目中会有很多的page objcet对象，你需要import 几十个 page instances, 造成test case 复杂且难读
+  解决思路就是建立一个 page manager，在测试中就是call这个manager，由它来返回我需要的page instance
+  在这个manager里面有多个属性，当我们的test call 这个manager的某属性时它就会返回一个page instance 
 
+  在 pageManager.ts 里面：
+  constructor(page: Page){
+    this.page = page
+    this.navigationPage = new NavigationPage(this.page)
+    this.formLayoutsPage = new FormLayoutsPage(this.page)
+  }
+  navigateTo(){ return this.navigationPage }
+  onFormLayoutsPage(){ return this.formLayoutsPage} 
 
+  在 test 里面： 
+    const newPage = new PageManager(page)
+    await newPage.navigateTo().formLayoutsPage()
+  */
 
 
 //*** 52. Page Objects Helper Base  ***/  
-
-
-
-
-
-
+  // 建立一个通用的更底层的 method 库, 例如建一个通用的 delay 的功能
+  // 在其他 class 就可以使用这个功能， 例如 export class NavigationPage extends HelperBase {}
+  // 注意在原来的class 的constructor 里面要使用 super() 来 inherit 
 
 
 
