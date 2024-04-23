@@ -314,7 +314,8 @@ test('test 01', async ({ page }) => {
 
   //= Locator assertions -> 用鼠标hover 会看到 “LocatorAssertions”，是直接对 Locator()返回的 DOM 对象的操作，需加 await
   await expect(page.getByPlaceholder('Click to add notes')).toHaveValue('Add Note'); // 可以用value定位
-  await expect(page.locator('inputbox')).toHaveText('Submit')  //更智能，会retry，多了一些对元素的操作
+  await expect(page.locator('inputbox')).toHaveText('Submit')     //更智能，会retry，多了一些对元素的操作,完整匹配
+  await expect(page.locator('inputbox')).toContainText('Submit')  //更智能，会retry，多了一些对元素的操作，包含文本即可
   await expect(page.locator('nb-layout-header')).toHaveCSS('background-color','rgb(50,50,90)') //验证背景颜色是否是指定值
   await expect(page.locator('inputbox')).toBeChecked()  
   await expect(page.locator('inputbox')).toBeVisible() 
@@ -656,6 +657,17 @@ test('test 01', async ({ page }) => {
   await expect(frame.locator('#trash li h5')).toHaveText(["High Tatras 2", "High Tatras 4"])
 
 //============================== < Secion 5 - End > ==============================
+
+
+
+//========================== < Secion 6 - Page Object Model > ===========================
+/*
+  1. Page object model is a design pattern used in the test automation to organize source code, improve 
+      maintainability and reusability of the code.
+  2. 把对象页面的元素定位工作都集中到一个页面对象中并封装独立出来，其中定义constructor来构建页面，定位元素，同时定义method，
+    以后在测试代码中只留下要做的操作，即调用method, 如果页面上的元素有修改，只需要到那个页面对象的文件中修改就好，无需改动测试
+*/
+
 //*** 45. What Is Page Objects  ***/  
   /* The page object model is a design pattern used in the test automation to organize source code, improve
   maintainability and reusability of the code.
@@ -775,27 +787,194 @@ test('test 01', async ({ page }) => {
   // 在其他 class 就可以使用这个功能， 例如 export class NavigationPage extends HelperBase {}
   // 注意在原来的class 的constructor 里面要使用 super() 来 inherit 
 
-
-
-//============================== < Secion 6 - Page Object Model > ==============================
-/*
-  1. Page object model is a design pattern used in the test automation to organize source code, improve maintainability and reusability of the code.
-  2. 把对象页面的元素定位工作都集中到一个页面对象中并封装独立出来，其中定义constructor来构建页面，定位元素，同时定义method，
-    以后在测试代码中只留下要做的操作，即(调用method)。 如果页面上的元素有修改，则只需要到那个页面对象的文件中修改就好，无需改动测试代码
+//============================== < Secion 6 - End > ===============================
 
 
 
+//========================= < Secion 7 - Working with API > ========================
+/* *** 53. What is API    ***  
+  Get    --> Retrieve  
+  Post   --> Create
+  Put    --> Update
+  Delete --> Remove 
 
+  API URL: Https URL (API end-point)
+  Headers: Content-type or Authorization token, etc..
+  Method: Get/Post/Put/Delete
+  Body:   JSON object with requested data 
 
+  2XX (200,201,204,...)   --> Success
+  3XX (300,301,302,...)   --> Redirection   (you request API_A, then A redirct you to other API)
+  4XX (400,401,404,...)   --> Client Error  (your request has error)
+  5XX (500,501,502,...)   --> Server Error  (your request is correct but server can't process)
 
-
-
+1. PlayWright --> Web-browser  <--> API server
+2. PlayWright --> Web-browser  <--> Playwright Mock                  (Mock)
+3. PlayWright --> Web-browser  <--> Playwright Mock <--> API server  (Intercept)
+4. PlayWright --> API server                                         (Interact)
 */
-//============================== < Secion 6 - End > ==============================
 
-//============================ < Secion 7 - Working with API > ============================
-/*
+
+//*** 54. Setup New Project   ***/  
+
+
+//*** 55. Mocking API   ***/  
+  /* page.route(URL ,()=>{ }) 用于创建一个路由对象，可指定URL或使用正则表达式进行匹配，用于捕获和处理特定的网络请求
+    通过设置路由，您可以模拟不同的行为、修改请求或进行自定义操作 
+    await page.route('***', async (route, request) => {
+      // 在这里处理请求
+      // 比如修改请求头、中止请求等
+    });   */
+  // 下例是 mock 一个API，如果有 对我们指定路径的访问，则将其转向到我这个mock的API，并返回我指定的结果  
+  await page.route('https://conduit-api.bondaracademy.com/api/tags', async route => {  // Mock的实例
+          const tags = {
+              "tags":[ "automation", "playwright" ]   
+          }
+          await route.fulfill({           // 用来执行路由的请求，并返回一个类型为 Response 的对象 给 浏览器
+              body: JSON.stringify(tags)  // 将tags 由 object转化成一个JSON 并提供给 Response的body，
+          })       // 本例其实是拦截(intercept)对指定路径的访问，并返回我指定的结果
+      })           // 即拦截所有对 tags API 的访问，返回一个预先设定的tag值，让browser显示在页面上
+  // page.route('https://conduit-api.bondaracademy.com/api/tags' 可以由RegEx简化成 route('*/**/api/tags',)
+
+
+//*** 56. Modify API Response  ***/  
+  // Case #2  -->  Modify API response --> 页面访问article API，PW 接收返回值并加以修改,然后再返回给浏览器显示
+  await page.route('*/**/api/articles*', async route => {
+    const response = await route.fetch()       // fetch()可以获取API call 的返回值
+    const responseBody = await response.json() // 接收JSON格式的结果
+    // 此时返回了一个 articles 的 array，里面每一个单元都是一个 article，下面我们接收第一个结果并修改其中的 title值 
+    responseBody.articles[0].title = "This is my new title"
+
+    await route.fulfill({           
+      body: JSON.stringify(responseBody)   // fulfill() 将修改过的response值返回给浏览器以供显示
+    })
+  })
+
+
+//*** 57. Perform API Request   ***/  
+  // 为了测试”delete“功能，可以先 Perform a API request去建立一个新的artical，然后再 UI 执行delete 以完成测试
+  // 为了能post request，我们需要先 call ‘login API’，从response 中获取 token，注意有redirect问题，需用真地址
+    const response = await request.post('https://api.realworld.io/api/users/login', { 
+        data: {
+            "user":{
+                "email":"pwtest@test.com",
+                "password": "Welcome1"
+            } } 
+    })            // 向 Login API 送登录信息       
+    const responseBody= await response.json()    // 取得 JSON格式的返回信息
+    const accessToken = responseBody.user.token  // 获取 user token
+
+    const articleData = {  //创建article 的数据
+        "article":{
+                    "tagList":['Test'],
+                    "title":"This is a test title",
+                    "description": "This is a test description", 
+                    "body":"This is a test body"
+                }
+    }
+    //下面向 article API发'POST'请求, 并获取网络返回结果代码
+    const articleResponse = await request.post('https://api.realworld.io/api/articles/', { 
+        data: articleData,
+        headers: { Authorization: `Token ${accessToken}` }
+    })
+    expect(articleResponse.status()).toEqual(201)  // POST 成功
+
+
+//*** 58. Intercept Browser API Response  ***/  
+    // 用 API 来删除我们post 的文章
+    // 用 waitForResponse() 来等待 API call 完成 --> 重要
+    const articleResponse = await page.waitForResponse('https://api.realworld.io/api/articles/')
+    const articleResponseBody = await articleResponse.json()
+    const slugId= articleResponseBody.article.slug   // slugID是article 的unique ID
+
+    const deleteArticleResponse = await request.delete(`https://api.realworld.io/api/articles/${slugId}`, {
+        headers: {                                             // 用前面获取的 slugID 来生成 delete 的URL
+            Authorization: `Token ${accessToken}` 
+        }
+    })   
+    expect (deleteArticleResponse.status()).toEqual(204)  // 204 是删除成功的代码
+
+
+//*** 59. Sharing Authentication State  ***/  
+  // 根目录下有 .gitignore 文件，把不需要同步到git的文件或文件夹都list在这里后，例如 auth 的信息
+  // 创建一个 .auth/user.json 文件来存放 auth token，同时建立一个auth.setup.ts 来执行统一的登录动作
+
+  import { test as setup } from '@playwright/test'; 
+  //注意这里引入 test 但同时进行改名，所以后面的test case 就是以 setup()来使用了
+  const authFile = '.auth/user.json'  
+
+  setup('authentication', async({page}) => {      //此处的setup = test
+      await page.goto('https://angular.realworld.io/');
+      await page.getByText('Sign in').click()
+      await page.getByRole('textbox', {name: "Email"}).fill('pwtest@test.com') 
+      await page.getByRole('textbox', {name: 'Password'}).fill('Welcome1')
+      await page.getByRole('button').click()
+      await page.waitForResponse('https://api.realworld.io/api/tags') // 确认用户已经login
+
+      await page.context().storageState({path: authFile}) 
+      /* 将当前 BrowserContext 里面的信息保存到 authFile 里面
+      1. page.context() 方法用于获取当前页面（Page）所属的浏览器上下文（BrowserContext）。
+          每个页面都是在一个浏览器上下文中创建的，这个上下文可以定义页面的行为，比如是否在无头模式下运行、视口大小、地理位置等。
+          浏览器上下文类似于一个独立的浏览器会话，它允许你在隔离的环境中运行页面，这对于并行测试和模拟不同用户会话非常有用
+      2. 在 Playwright 中，storageState() 方法用于捕获浏览器上下文中的存储状态，包括 cookies和local storage
+        可使用该方法来捕获登录后的存储状态。
+      3. 此处保存了登录信息后储存到user.json中，项目中所有其他test可以共享这个登录信息
+      */
+  })
+
+  /* 随后要去修改 playwright.config.ts 文件并加入
+    projects: [
+      { name: 'setup‘,                      //--> 建立一个项目叫setup，在所以项目前运行，以取得用户 auth信息并储存
+        testMatch: 'auth.setup.ts'                匹配查找并执行该文件
+      }
+      { name:'chromium',
+        use: {
+          ...devices['Desktop Chrome'],
+          storageState: '.auth/user.json'   //--> 指定执行chromium项目时，BrowserContext的信息用storageState
+          dependencies: ['setup']           里面存储的信息来代替,同时这里设置 dependency让项目自动提前执行setup，
+        }                                   随后执行test时就无需再执行登录操作，因为此时browser里面已经有了auth
+      }
+      {name:'firefox', ...}
+    ]
+  */
+
+
+//*** 60. API Authentication   ***/  
+// 此例子是直接使用前面 Login API call 的值来填充 user.json, 从而省略我们UI 登录的繁琐步骤
+/* user.json 的模版： 
+  {
+    "cookies": [], 
+    "origins":[
+      {
+        "origin": "https://angular.realworld.io",
+        "localStorage":
+          {
+            "name": "jwtToken",
+            "value": "eyJhbGci0iJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7ImVtYWlsIjo"
+          }
+      }
+  }
 */
+    // 新方法，直接call login API，获得user info后通过文件操作来保存到user.json中，提高效率
+    import user from '../.auth/user.json';   // 此处是把整个 user.json文件导入作为一个object ‘user'来用
+    import fs from 'fs' ;                    //fs= ‘file sync’，是Javascipt 内建的library 用于文件处理
+
+    const response = await request.post('https://api.realworld.io/api/users/login', { 
+        data: {
+            "user":{
+                "email":"pwtest@test.com",
+                "password": "Welcome1"
+            } } 
+    })                                           // 向 Login API 送登录信息       
+    const responseBody= await response.json()    // 取得 JSON格式的返回信息
+    const accessToken = responseBody.user.token  // 获取 user token
+
+    user.origins[0].localStorage[0].value = accessToken  
+    const userJson = JSON.stringify(user) 
+    fs.writeFileSync(authFile , userJson)      //写入文件（文件名，写入内容-JSON ） 
+
+    process.env['ACCESS_TOKEN']= accessToken  //将我们保存的token写入当前系统中process环境变量'ACCESS_TOKEN'
+
 //============================== < Secion 7 - End > ================================
 
 
@@ -808,8 +987,10 @@ test('test 01', async ({ page }) => {
       然后调用为： npm run runPageObject 
       = npx playwright test usePageObjects.spec.ts --project=chromium
 
+
   2. Test Data generator
       install faker library
+
 
   3. Test retry
     * 在"playwright.config.ts" 文件中可以找到 retries: process.env.CI ? 2:0  代表在CI环境中try 2次，local不retry
@@ -822,6 +1003,7 @@ test('test 01', async ({ page }) => {
         });
 
   4. Run in parallel
+
 
   5. Screenshots and Videos
     * 自动创建文件夹并将screenshot 保存其下
@@ -838,6 +1020,7 @@ test('test 01', async ({ page }) => {
         然后到 test-results 文件夹下可以在对应的测试下看到 webm 文件
         另外运行 npx playwright show-report 也可在网页版report下找到视频
 
+
   6. Environment Variables
     * 加 baseURL: 'http://localhost:4200/' 到 playwright.config文件中‘use’ 下面
         随后在code中就不需要在打前面的URL了，可以调用如下： 
@@ -846,6 +1029,7 @@ test('test 01', async ({ page }) => {
     * 注意上面的‘use’ 下面的各种设定是可以改到各个project 下面单独设定的
 
     * 如果需要在一个测试中使用不同的base URL，例如 stage 与 test 使用不同的URL，请具体看视频
+
 
   7. Configuration file
     * Example:
@@ -877,6 +1061,8 @@ test('test 01', async ({ page }) => {
 
 */
 //============================== < Secion 8 - End > ================================
+
+
 
 //== Project setup ==
 /* Configure projects for major browsers */ 
